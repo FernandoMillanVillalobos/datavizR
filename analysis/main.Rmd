@@ -3774,6 +3774,213 @@ ggplot(dat, aes(y = n, axis1 = Y1, axis2 = Y2, axis3 = Y3, axis4 = Y4)) +
   theme(legend.position = "top")
 ```
 
+# Tutorials: Labelling Bar Graphs in ggplot2
+
+## Data preparation
+
+```{r data-preparation}
+mpg_sum <- mpg |>
+dplyr::filter(year == 2008) |>
+dplyr::mutate(
+  # capitalize first letter
+  manufacturer = stringr::str_to_title(manufacturer),
+  # turn into lumped factors with capitalized names
+  manufacturer = forcats::fct_lump(manufacturer, n = 10)
+) |>
+# count and sort ocurrences
+dplyr::count(manufacturer, sort = TRUE) |>
+dplyr::mutate(
+  #  order factor levels by number, put "Other" to end
+  manufacturer = forcats::fct_rev(forcats::fct_inorder(manufacturer)),
+  manufacturer = forcats::fct_relevel(manufacturer, "Other", after = 0)
+)
+# we have reversed the ordering since {ggplot2} plots factors from bottom to top when being mapped to y
+mpg_sum
+```
+## Data visualization with ggplot2
+
+```{r dataviz}
+# plotting the basic bar plot
+ggplot(mpg_sum, aes(x = n, y = manufacturer)) +
+  geom_col(fill = "gray70") +
+  theme_minimal()
+
+# calculate percentages creating a temp df
+# option 1: using sprintf() to create percentage labels
+mpg_sum <- mpg_sum |> 
+  dplyr::mutate(
+    perc = paste0(sprintf("%4.1f", n / sum(n) * 100), "%")
+  )
+mpg_sum
+
+# option 2: using the percent() from the scales package
+# mpg_sum <- mpg_sum |> 
+#   dplyr::mutate(
+#     perc = scales::percent(n / sum(n), accuracy = .1, trim = FALSE)
+#   )
+# mpg_sum
+
+# adding the percentage label
+ggplot(mpg_sum, aes(x = n, y = manufacturer)) +
+  geom_col(fill = "gray70") +
+  geom_text(aes(label = perc)) +
+  theme_minimal()
+
+# adding some description to one of the bars
+mpg_sum <- mpg_sum |> 
+  dplyr::mutate(
+    perc = paste0(sprintf("%4.1f", n / sum(n) * 100), "%"),
+    perc = if_else(row_number() == 1, paste(perc, "of all car models"), perc)
+  )
+
+ggplot(mpg_sum, aes(x = n, y = manufacturer)) +
+  geom_col(fill = "gray70") +
+  geom_text(aes(label = perc)) +
+  theme_minimal()
+
+# example of creating and placing labels on the fly
+# prepare non-aggregated data set with lumped and ordered factors
+# mpg_fct <- mpg %>%
+#   dplyr::filter(year == 2008) %>%
+#   dplyr::mutate(
+#     # add count to calculate percentages later
+#     total = dplyr::n(),
+#     # turn into lumped factors with capitalized names
+#     manufacturer = stringr::str_to_title(manufacturer),
+#     manufacturer = forcats::fct_lump(manufacturer, n = 10),
+#     # order factor levels by number, put "Other" to end
+#     manufacturer = forcats::fct_rev(forcats::fct_infreq(manufacturer)),
+#     manufacturer = forcats::fct_relevel(manufacturer, "Other", after = 0)
+#   )
+# mpg_fct
+# 
+# ggplot(mpg_fct, aes(x = manufacturer)) +
+#   geom_bar(fill = "gray70") +
+#   # add count labels
+#   geom_text(
+#     stat = "count",
+#     aes(label = ..count..)
+#   ) +
+#   # rotate plot
+#   coord_flip() +
+#   theme_minimal()
+
+# locating labels inside the bars
+ggplot(mpg_sum, aes(x = n, y = manufacturer)) +
+  geom_col(fill = "gray70") +
+  geom_text(aes(label = perc),
+    hjust = 1,
+    nudge_x = -.5
+  ) +
+  theme_minimal()
+
+# In case you want to put the next to the bars, you often need to adjust the plot margin and/or the limits to avoid that the labels are cut off. The drawback of using limits is that you have to define them manually.You can make sure that labels are not truncated by the panel by adding clip = "off" to any coordinate system.
+
+# adding colors to the bars using different hues
+
+# option 1: create color palette based on input data
+pal <- c(
+  "gray85",
+  # use the length of the manufacturer column for all non-highlighted bars and subtract the number of bars we want to highlight
+  rep("gray70", length(mpg_sum$manufacturer) - 4), 
+  "coral2", "mediumpurple1", "goldenrod1"
+)
+
+ggplot(mpg_sum, aes(x = n, y = manufacturer, fill = manufacturer)) +
+  geom_col() +
+  geom_text(aes(label = perc),
+    hjust = 1,
+    nudge_x = -.5
+  ) +
+  # add custom colors
+  scale_fill_manual(values = pal, guide = "none") +
+  theme_minimal()
+
+# option 2: add the color to the data set and map the fill to that column and use scale_fill_identity()
+# this option will work also if the data were updated!
+mpg_sum <- mpg_sum  |>
+mutate(
+  color = case_when(
+    row_number() == 1 ~ "goldenrod1",
+    row_number() == 2 ~ "mediumpurple1",
+    row_number() == 3 ~ "coral2",
+    manufacturer == "Other" ~ "gray85",
+    # all others should be gray
+    TRUE ~ "gray70"
+  )
+)
+
+ggplot(mpg_sum, aes(x = n, y = manufacturer, fill = color)) +
+  geom_col() +
+  geom_text(
+    aes(label = perc),
+    hjust = 1, nudge_x = -.5
+  ) +
+  # add custom colors
+  scale_fill_identity(guide = "none") +
+  theme_minimal()
+
+# some polishing
+ggplot(mpg_sum, aes(x = n, y = manufacturer, fill = color)) +
+  geom_col() +
+  geom_text(
+    aes(label = perc),
+    hjust = 1, nudge_x = -.5,
+    size = 3.5, fontface = "bold", family = "Fira Sans"
+  ) +
+  scale_x_continuous(expand = c(.01, .01)) +
+  # add custom colors
+  scale_fill_identity(guide = "none") +
+  theme_void() +
+  theme(
+    axis.text.y = element_text(size = 14, hjust = 1, family = "Fira Sans"),
+    plot.margin = margin(rep(15, 4))
+  )
+
+# adding label boxes for accessibility
+ggplot(mpg_sum, aes(x = n, y = manufacturer, fill = color)) +
+  geom_col() +
+  geom_label(
+    aes(label = perc),
+    hjust = 1, nudge_x = -.5,
+    size = 3.5, fontface = "bold", family = "Fira Sans",
+    fill = "white", label.size = 0
+  ) +
+  scale_x_continuous(expand = c(.01, .01)) +
+  # add custom colors
+  scale_fill_identity(guide = "none") +
+  theme_void() +
+  theme(
+    axis.text.y = element_text(size = 14, hjust = 1, family = "Fira Sans"),
+    plot.margin = margin(rep(15, 4))
+  )
+
+# with a different label placement
+mpg_sum2 <- mpg_sum |>
+  mutate(
+  # set justification based on data
+  # so that only the first label is placed inside
+  place = if_else(row_number() == 1, 1, 0),
+  # add some spacing to labels since we cant use nudge_x anymore
+  perc = paste(" ", perc, " ")
+)
+mpg_sum2
+
+ggplot(mpg_sum2, aes(x = n, y = manufacturer, fill = color)) +
+  geom_col() +
+  geom_text(
+    aes(label = perc, hjust = place),
+    size = 4, fontface = "bold", family = "Fira Sans"
+  ) +
+  scale_x_continuous(expand = c(.01, .01)) +
+  scale_fill_identity(guide = "none") +
+  theme_void() +
+  theme(
+    axis.text.y = element_text(size = 14, hjust = 1, family = "Fira Sans"),
+    plot.margin = margin(rep(15, 4))
+  )
+```
+
 # Linting
 
 The code in this RMarkdown is linted with the [lintr package](https://github.com/jimhester/lintr), which is based on the  [tidyverse style guide](http://style.tidyverse.org/). 
