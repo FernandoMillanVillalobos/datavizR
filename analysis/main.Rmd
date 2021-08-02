@@ -166,6 +166,7 @@ library(distributional) # for dist_normal()
 library(psych)
 library(introdataviz)
 library(ggalluvial)
+library(ggdist)
 library(gganimate)",
 file = "manifest.R")
 ```
@@ -2468,100 +2469,100 @@ ggplot(penguins, aes(body_mass_g, flipper_length_mm)) + geom_point() +
 
 ```{r uncertainty}
 # Making a plot with error bars in R
-# lm_data <- gapminder %>%
-#   nest(data = -c(continent, year))
-# lm_data
-# 
-# lm_data <- gapminder %>%
-#   nest(data = -c(continent, year)) %>%
-#   mutate(
-#     fit = map(data, ~lm(lifeExp ~ log(gdpPercap), data = .x)),
-#     tidy_out = map(fit, tidy)
-#   ) %>%
-#   unnest(cols = tidy_out) %>%
-#   select(-fit, -data) %>%
-#   filter(term != "(Intercept)", continent != "Oceania")
-# lm_data
-# 
-# ggplot2::ggplot(lm_data) +
-#   aes(
-#     x = year, y = estimate,
-#     ymin = estimate - 1.96*std.error,
-#     ymax = estimate + 1.96*std.error,
-#     color = continent
-#   ) +
-#   geom_pointrange(
-#     position = position_dodge(width = 1)
-#   ) +
-#   scale_x_continuous(
-#     breaks = unique(gapminder$year)
-#   ) + 
-#   theme(legend.position = "top")
-# 
-# # The ggdist package provides many different visualizations of uncertainty
-# # Half-eyes
-# lm_data %>%
-#   filter(year == 1952) %>%
-#   mutate(
-#     continent = 
-#       fct_reorder(continent, estimate) 
-#   ) %>%
-#   ggplot2::ggplot(aes(x = estimate, y = continent)) +
-#   ggdist::stat_dist_halfeye(
-#     aes(dist = dist_normal(
-#       mu = estimate, sigma = std.error
-#     )),
-#     point_size = 4
-#   )
-# 
-# # Gradients interval
-# lm_data %>%
-#   filter(year == 1952) %>%
-#   mutate(
-#     continent = 
-#       fct_reorder(continent, estimate) 
-#   ) %>%
-#   ggplot2::ggplot(aes(x = estimate, y = continent)) +
-#   ggdist::stat_dist_gradientinterval(
-#     aes(dist = dist_normal(
-#       mu = estimate, sigma = std.error
-#     )),
-#     point_size = 4,
-#     fill = "skyblue"
-#   )
-# 
-# # Dots interval
-# lm_data %>%
-#   filter(year == 1952) %>%
-#   mutate(
-#     continent = 
-#       fct_reorder(continent, estimate) 
-#   ) %>%
-#  ggplot2::ggplot(aes(x = estimate, y = continent)) +
-#   ggdist::stat_dist_dotsinterval(
-#     aes(dist = dist_normal(
-#       mu = estimate, sigma = std.error
-#     )),
-#     point_size = 4,
-#     fill = "skyblue",
-#     quantiles = 20
-#   )
-# 
-# lm_data %>%
-#   filter(year == 1952) %>%
-#   mutate(
-#     continent = 
-#       fct_reorder(continent, estimate) 
-#   ) %>%
-#   ggplot2::ggplot(aes(x = estimate, y = continent)) +
-#   ggdist::stat_dist_dotsinterval(
-#     aes(dist = dist_normal(
-#       mu = estimate, sigma = std.error
-#     )),
-#     point_size = 4,
-#     fill = "skyblue",
-#     quantiles = 10
-# )
+lm_data <- gapminder %>%
+  nest(data = -c(continent, year))
+lm_data
+
+lm_data <- gapminder %>%
+  nest(data = -c(continent, year)) %>%
+  mutate(
+    fit = map(data, ~lm(lifeExp ~ log(gdpPercap), data = .x)),
+    tidy_out = map(fit, tidy)
+  ) %>%
+  unnest(cols = tidy_out) %>%
+  select(-fit, -data) %>%
+  filter(term != "(Intercept)", continent != "Oceania")
+lm_data
+
+ggplot2::ggplot(lm_data) +
+  aes(
+    x = year, y = estimate,
+    ymin = estimate - 1.96*std.error,
+    ymax = estimate + 1.96*std.error,
+    color = continent
+  ) +
+  geom_pointrange(
+    position = position_dodge(width = 1)
+  ) +
+  scale_x_continuous(
+    breaks = unique(gapminder$year)
+  ) +
+  theme(legend.position = "top")
+
+# The ggdist package provides many different visualizations of uncertainty
+# Half-eyes
+lm_data %>%
+  filter(year == 1952) %>%
+  mutate(
+    continent =
+      fct_reorder(continent, estimate)
+  ) %>%
+  ggplot2::ggplot(aes(x = estimate, y = continent)) +
+  ggdist::stat_dist_halfeye(
+    aes(dist = dist_normal(
+      mu = estimate, sigma = std.error
+    )),
+    point_size = 4
+  )
+
+# Gradients interval
+lm_data %>%
+  filter(year == 1952) %>%
+  mutate(
+    continent =
+      fct_reorder(continent, estimate)
+  ) %>%
+  ggplot2::ggplot(aes(x = estimate, y = continent)) +
+  ggdist::stat_dist_gradientinterval(
+    aes(dist = dist_normal(
+      mu = estimate, sigma = std.error
+    )),
+    point_size = 4,
+    fill = "skyblue"
+  )
+
+# Dots interval
+lm_data %>%
+  filter(year == 1952) %>%
+  mutate(
+    continent =
+      fct_reorder(continent, estimate)
+  ) %>%
+ ggplot2::ggplot(aes(x = estimate, y = continent)) +
+  ggdist::stat_dist_dotsinterval(
+    aes(dist = dist_normal(
+      mu = estimate, sigma = std.error
+    )),
+    point_size = 4,
+    fill = "skyblue",
+    quantiles = 20
+  )
+
+lm_data %>%
+  filter(year == 1952) %>%
+  mutate(
+    continent =
+      fct_reorder(continent, estimate)
+  ) %>%
+  ggplot2::ggplot(aes(x = estimate, y = continent)) +
+  ggdist::stat_dist_dotsinterval(
+    aes(dist = dist_normal(
+      mu = estimate, sigma = std.error
+    )),
+    point_size = 4,
+    fill = "skyblue",
+    quantiles = 10
+)
 ```
 
 ## Dimension reduction
