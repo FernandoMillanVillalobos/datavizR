@@ -167,6 +167,7 @@ library(psych)
 library(introdataviz)
 library(ggalluvial)
 library(ggdist)
+library(ds4psy) # book Data Science for Psychologists
 library(gganimate)",
 file = "manifest.R")
 ```
@@ -3251,7 +3252,6 @@ gdp_ranked %>%
 ```
 
 # Data visualisation using R, for researchers who don’t use R
-
 ## Getting Started
 
 ```{r getting_started}
@@ -3775,9 +3775,10 @@ ggplot(dat, aes(y = n, axis1 = Y1, axis2 = Y2, axis3 = Y3, axis4 = Y4)) +
   theme(legend.position = "top")
 ```
 
-# Tutorials: Labelling Bar Graphs in ggplot2
+# Tutorials
 
-## Data preparation
+## Labelling Bar Graphs in ggplot2
+### Data preparation
 
 ```{r data-preparation}
 mpg_sum <- mpg |>
@@ -3798,7 +3799,7 @@ dplyr::mutate(
 # we have reversed the ordering since {ggplot2} plots factors from bottom to top when being mapped to y
 mpg_sum
 ```
-## Data visualization with ggplot2
+### Data visualization with ggplot2
 
 ```{r dataviz}
 # plotting the basic bar plot
@@ -3981,6 +3982,60 @@ ggplot(mpg_sum2, aes(x = n, y = manufacturer, fill = color)) +
     plot.margin = margin(rep(15, 4))
   )
 ```
+
+## Tables
+Tables are a form of data visualization. If you want to show the exact amount of every value in your data, a table might be your best solution. But tables are especially susceptible to clutter.
+![Anatomy of a Table](input/img/tables.png)
+The ten guidelines of better tables:
+- Rule 1. Offset the headers from body 
+- Rule 2. Use subtle dividers instead of heavy gridlines 
+- Rule 3. Right-align numbers and headers 
+- Rule 4. Left-align text and header 
+- Rule 5. Select the appropriate level of precision 
+- Rule 6. Guide your reader with space between rows and columns 
+- Rule 7. Remove unit repetition 
+- Rule 8. Highlight outliers 
+- Rule 9. Group similar data and increase white space 
+- Rule 10. Add visualizations when appropriate
+
+1. Rule 1. offset the headers from body
+Make your column titles clear. Try using boldface text or lines to offset them from the numbers and text in the body of the table.
+![Offset the headers from body](input/img/rule01.png)
+2. Rule 2. Use subtle dividers instead of heavy gridlines
+For series that show the total, use shading, boldface, or subtle line breakers to distinguish these.
+![Use subtle dividers](input/img/rule02.png)
+3. Rule 3. Right-align numbers and headers
+Right-align numbers along the decimal place or comma. You might need to add zeros to maintain the alignment, but it’s worth it so the numbers are easier to read and scan. Always use fonts that have “lining numbers,” where all the numerals hit the baseline, and none drop below it.
+![Right-align numbers](input/img/rule03.png)
+4. Rule 4. Left-align text and header
+Once we’ve right-aligned the numbers, we should left-align the text.
+![Left-align text](input/img/rule04.png)
+5. Rule 5. Select the appropriate level of precision
+Precision to the fifth-decimal place is almost never necessary. Strike a balance between necessary precision and a clean, spare table.
+![Precision](input/img/rule05.png)
+6. Rule 6. Guide your reader with space between rows and columns
+Your use of space in and around the table can influence the direction in which your reader reads the data. In the table on the left, for example, there is more space between the columns than between the rows, so your eye is drawn to read the table top-to-bottom rather than left-to-right. By comparison, the table on the right has more space between the rows than between the columns, so your eye is more likely to track horizontally rather than vertically. Use spacing strategically to match the order in which you want your reader to take in the table.
+![Space](input/img/rule06.png)
+7. Rule 7. Remove unit repetition
+Your reader knows that the values in your table are dollars because you told them in the title or subtitle. Repeating the symbol throughout the table is overkill and cluttering. Use the title or column title area to define the units, or place them in the first row only (remembering to align the numbers along the decimal). If you are mixing units within the table, be sure to make your labels clear.
+![Remove repition](input/img/rule07.png)
+8. Rule 8. Highlight outliers
+If we want to point out some observations, we might want to highlight outlier values by making the text boldface, shading it with color, or even shading the entire cell. Some readers will wade through all of the numbers in the table because they need specific information, but many readers are more likely to look for only the most important values.
+![Highlight outliers](input/img/rule08.png)
+9. Rule 9. Group similar data and increase white space
+Reduce repetition by grouping similar data or labels. Similar to eliminating dollars signs on every number value, we can reduce some of the clutter in our tables by grouping like terms or labels. In this next example, grouping the names of the country regions reduces the amount of repetitive information in the first column. You can also use spanner headers and rules to combine the same entry and reduce unnecessary repetition.
+![Group similar data](input/img/rule09.png)
+10. Rule 10. Add visualizations when appropriate
+Just like highlighting outliers with color or boldface, you might add sparklines to visualize some data rather than showing every number. Or you can use small bar charts to visually illustrate a series of numbers. Or you could use a heatmap and leave the numbers in the table or hide them, which can help the reader focus on the overall patterns and ignore the details. We can also embed a chart-type structure right into our table. If you want a full chart embedded within the table, a dot plot is succinct and can line up well within the linear structure of a table. You can also use a modification on the standard dot plot to place the numbers in their relative positions directly in a table.
+![Highlight outliers](input/img/rule10.png)
+
+# Data Science for Psychologists (Hansjörg Neth)
+## Using colors in R
+
+```{r}
+unikn::seecol(c(Seeblau, "deepskyblue"))
+```
+
 
 # Linting
 
