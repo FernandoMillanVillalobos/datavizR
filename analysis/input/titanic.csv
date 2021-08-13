@@ -1,4 +1,4 @@
-class,age,sex,survived
+class,age,sex,fate
 1st,29,female,survived
 1st,2,female,died
 1st,30,male,died

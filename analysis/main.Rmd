@@ -168,6 +168,9 @@ library(introdataviz)
 library(ggalluvial)
 library(ggdist)
 library(ds4psy) # book Data Science for Psychologists
+library(ISLR) # tables dataset 
+library(Rfast) # useful functions
+library(MASS)
 library(gganimate)",
 file = "manifest.R")
 ```
@@ -4039,6 +4042,61 @@ Reduce repetition by grouping similar data or labels. Similar to eliminating dol
 
 Just like highlighting outliers with color or boldface, you might add sparklines to visualize some data rather than showing every number. Or you can use small bar charts to visually illustrate a series of numbers. Or you could use a heatmap and leave the numbers in the table or hide them, which can help the reader focus on the overall patterns and ignore the details. We can also embed a chart-type structure right into our table. If you want a full chart embedded within the table, a dot plot is succinct and can line up well within the linear structure of a table. You can also use a modification on the standard dot plot to place the numbers in their relative positions directly in a table.
 ![Highlight outliers](input/img/rule10.png)
+### Contingency Tables in R
+#### Two-Way Tables
+Two-way tables involve two categorical variables, X with r categories and Y with c. Therefore, there are ```r times c``` possible combinations. Sometimes, both X and Y will be outcome variables, in which case it makes sense to talk about their joint distribution. On other occasions, Y will be the outcome variable and X will be the predictor variable. In this case, it does not make sense to talk about the joint distribution of X and Y. Instead, we focus on the conditional distribution of Y given X.
+
+```{r contingency_tables_two_ways}
+# load data
+load("")
+# create the wage_cat variable which takes two values
+# such as Above if the wage is above median and Below if the wage is below median
+Wage$wage_cat <- as.factor(ifelse(Wage$wage > median(Wage$wage), "Above", "Below"))
+
+# Examine the Wage vs Job Class
+# you could use also the command xtabs(~jobclass+wage_cat, data=Wage)
+con1 <- table(Wage$jobclass, Wage$wage_cat)
+con1
+
+# the most proper way to represent graphically the contingency tables are the mosaic plots
+mosaicplot(con1)
+
+# we can get the proportions of the Contingency Tables, on overall and by rows and columns
+# overall
+prop.table(con1)
+
+# by row
+prop.table(con1, margin = 1)
+
+# by column
+prop.table(con1, margin = 2)
+
+# we can add the rows and columns totals of the contingency tables as follows
+addmargins(con1)
+```
+#### Three-Way Tables
+Let’s say that now we want to create contingency tables of three dimensions.
+
+```{r contingency_tables_three_ways}
+con4 <- xtabs(~ jobclass + wage_cat + race, data = Wage)
+ftable(con4)
+
+# let’s say that we want to change the share of the rows and columns
+con4 |> ftable(row.vars = c("race", "jobclass"))
+
+# let’s say now we want to get the probabilities by row
+con4  |> 
+  ftable(row.vars = c("race", "jobclass"))  |> 
+  prop.table(margin = 1)  |> 
+  round(2)
+
+# build a table to compare the marginal frequencies
+margins <- rbind(white = margin.table(con4,1), black = margin.table(con4,2))
+names(dimnames(margins)) <- c("Race", "Jobclass")
+margins
+```
+
+
 
 # Data Science for Psychologists (Hansjörg Neth)
 ## Using colors in R
