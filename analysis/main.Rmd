@@ -168,6 +168,7 @@ library(introdataviz)
 library(ggalluvial)
 library(ggdist)
 library(ds4psy) # book Data Science for Psychologists
+library(unikn)
 library(ISLR) # tables dataset 
 library(Rfast) # useful functions
 library(MASS)
@@ -429,7 +430,7 @@ The variables specified in group_by() are retained in the new data frame, the va
 We generally want our plots to present data in some meaningful order. The reorder() function will do this for us. It takes two required arguments. The first is the categorical variable or factor that we want to reorder. In this case, that's country. The second is the variable we want to reorder it by. Here that is the donation rate, donors. The third and optional argument to reorder() is the function you want to use as a summary statistic. If you give reorder() only the first two required arguments, then by default it will reorder the categories of your first variable by the mean value of the second. You can use any sensible function you like to reorder the categorical variable (e.g., median, or sd).
 
 ```{r continous_data_by_group}
-organdata %>% select(1:6) %>% sample_n(size = 10) # pick a sample 
+organdata %>% dplyr::select(1:6) %>% sample_n(size = 10) # pick a sample 
 
 # dotplot
 p <- ggplot(data = organdata, mapping = aes(x = year, y = donors)) 
@@ -528,7 +529,7 @@ p + geom_pointrange(mapping = aes(ymin = donors_fn1 - donors_fn2, # how us a poi
 The ggrepel package provides geom_text_repel() and geom_label_repel(), two geoms that can pick out labels much more flexibly than the default geom_text(). The ggrepel package has several other useful geoms and options to aid with effectively plotting labels along with points. The performance of its labeling algorithm is consistently very good. For many purposes it will be a better first choice than geom_text().
 
 ```{r plot_text}
-elections_historic %>% select(2:7) 
+elections_historic %>% dplyr::select(2:7) 
 
 p_title <- "Presidential Elections: Popular & Electoral College Margins"
 p_subtitle <- "1824-2016"
@@ -936,7 +937,7 @@ The broader problem with dual-axis plots of this sort is that the apparent assoc
 ```{r two_axes}
 # Tidying data
 head(fredts)
-fredts_m <- fredts %>% select(date, sp500_i, monbase_i) %>%
+fredts_m <- fredts %>% dplyr::select(date, sp500_i, monbase_i) %>%
     gather(key = series, value = score, sp500_i:monbase_i)
 
 head(fredts_m)
@@ -1168,7 +1169,7 @@ lincoln_temps <- lincoln_weather %>%
     ),
     mean_temp = `Mean Temperature [F]`
   ) %>%
-  select(date, month, month_long, mean_temp) %>%
+  dplyr::select(date, month, month_long, mean_temp) %>%
   mutate(month = fct_rev(month)) # fct_recode() places levels in reverse order
 
 # Making histograms and setting the bin width
@@ -1287,9 +1288,9 @@ ggplot(lincoln_temps, aes(x = mean_temp, y = month_long)) +
 ```{r coord_systems}
 # import data
 US_census <- read_csv("https://wilkelab.org/SDS375/datasets/US_census.csv")
-tx_counties <- US_census %>% 
+tx_counties <- US_census %>%
   filter(state == "Texas") %>%
-  select(name, pop2010) %>%
+  dplyr::select(name, pop2010) %>%
   extract(name, "county", regex = "(.+) County") %>%
   mutate(popratio = pop2010/median(pop2010)) %>%
   arrange(desc(popratio)) %>%
@@ -1405,7 +1406,7 @@ temperatures <- read_csv("https://wilkelab.org/SDS375/datasets/tempnormals.csv")
       location, levels = c("Death Valley", "Houston", "San Diego", "Chicago")
     )
   ) %>%
-  select(location, day_of_year, month, temperature)
+  dplyr::select(location, day_of_year, month, temperature)
 
 temps_months <- read_csv("https://wilkelab.org/SDS375/datasets/tempnormals.csv") %>%
   group_by(location, month_name) %>%
@@ -1419,7 +1420,7 @@ temps_months <- read_csv("https://wilkelab.org/SDS375/datasets/tempnormals.csv")
       location, levels = c("Death Valley", "Houston", "San Diego", "Chicago")
     )
   ) %>%
-  select(-month_name)
+  dplyr::select(-month_name)
 
 
 US_regions <- read_csv("input/US_regions.csv")
@@ -2055,7 +2056,7 @@ gapminder %>%
 
 flight_data <- flights %>% # take data on individual flights
   left_join(airlines) %>%  # add in full-length airline names
-  select(name, carrier, flight, year, month, day, origin, dest) # pick columns of interest
+  dplyr::select(name, carrier, flight, year, month, day, origin, dest) # pick columns of interest
 
 # alphabetic ordering
 flight_data %>%
@@ -2445,7 +2446,7 @@ lm_summary <- penguins %>%
     fit = map(data, ~lm(flipper_length_mm ~ body_mass_g, data = .x)),
     glance_out = map(fit, glance)
   ) %>%
-  select(species, glance_out) %>%
+  dplyr::select(species, glance_out) %>%
   unnest(cols = glance_out)
 lm_summary
 
@@ -2457,7 +2458,7 @@ label_data <- lm_summary %>%
     label = glue("R^2 = {rsqr}, P = {pval}"),
     body_mass_g = 6400, flipper_length_mm = 175 # label position in plot
   ) %>%
-  select(species, label, body_mass_g, flipper_length_mm)
+  dplyr::select(species, label, body_mass_g, flipper_length_mm)
 label_data
 
 # Plotting
@@ -2484,7 +2485,7 @@ lm_data <- gapminder %>%
     tidy_out = map(fit, tidy)
   ) %>%
   unnest(cols = tidy_out) %>%
-  select(-fit, -data) %>%
+  dplyr::select(-fit, -data) %>%
   filter(term != "(Intercept)", continent != "Oceania")
 lm_data
 
@@ -2589,7 +2590,7 @@ blue_jays %>%
 
 # We perform a PCA with prcomp()
 pca_fit <- blue_jays %>% 
-  select(where(is.numeric)) %>% # retain only numeric columns
+  dplyr::select(where(is.numeric)) %>% # retain only numeric columns
   scale() %>%                   # scale to zero mean and unit variance
   prcomp()                      # do PCA
 
@@ -2660,7 +2661,7 @@ ggplot(iris, aes(Petal.Length, Petal.Width, color = Species)) +
 
 # We perform k-means clustering with kmeans()
 km_fit <- iris %>% 
-  select(where(is.numeric)) %>%
+  dplyr::select(where(is.numeric)) %>%
   kmeans(
     centers = 3,  # number of cluster centers
     nstart = 10   # number of independent restarts of the algorithm
@@ -2832,7 +2833,7 @@ ggplot(iris) +
 # Automatic labeling with geom_text_repel()
 mtcars_named <- mtcars %>%
   rownames_to_column("car") %>% # rownames to column car 
-  select(car, weight = wt, mpg)
+  dplyr::select(car, weight = wt, mpg)
 mtcars_named
 
 ggplot(mtcars_named, aes(weight, mpg)) +
@@ -4047,8 +4048,6 @@ Just like highlighting outliers with color or boldface, you might add sparklines
 Two-way tables involve two categorical variables, X with r categories and Y with c. Therefore, there are ```r times c``` possible combinations. Sometimes, both X and Y will be outcome variables, in which case it makes sense to talk about their joint distribution. On other occasions, Y will be the outcome variable and X will be the predictor variable. In this case, it does not make sense to talk about the joint distribution of X and Y. Instead, we focus on the conditional distribution of Y given X.
 
 ```{r contingency_tables_two_ways}
-# load data
-load("")
 # create the wage_cat variable which takes two values
 # such as Above if the wage is above median and Below if the wage is below median
 Wage$wage_cat <- as.factor(ifelse(Wage$wage > median(Wage$wage), "Above", "Below"))
@@ -4096,14 +4095,199 @@ names(dimnames(margins)) <- c("Race", "Jobclass")
 margins
 ```
 
-
-
 # Data Science for Psychologists (Hansjörg Neth)
-## Using colors in R
 
-```{r}
+## Using colors in R
+### Essentials of color
+#### Colors vs. color palettes
+It is useful to distinguish between __individual colors__ (like "red" or "green") and __color palettes__ (aka. color scales or color maps), which are sets or ordered sequences of colors that somehow belong together, based on some abstract principle or someone’s personal preference.
+
+Seeing a color may seem simple, but is the result of a complex and highly volatile process. One of the most perplexing aspects of color perception is their profound dependency on context. More generally, colors may not exist in objects, but are also more then mere reflections of light, as they play important roles in our perception of our world. Importantly, colors are not just visual experiences, but also concepts that convey meanings and connotations without and beyond seeing anything. Overall, the seemingly simple act of adding color to a visualization not only needs to take into account the features of the visualization, but the _ecological rationality_ of the entire system.
+
+```{r essentials_of_colors}
+# representing one individual color
+unikn::seecol(Seeblau)
+
+# comparing two similar colors
 unikn::seecol(c(Seeblau, "deepskyblue"))
+
+# representing a color palette 
+unikn::seecol(pal = "pal_seeblau", n = 5)
+
+# representing unikn color palettes
+unikn::seecol(pal = "unikn_all")
 ```
+#### Types of color palettes
+We can identify three key functions for using color in graphs:
+
+1. _Distinguish_ between different categorical groups;
+
+2. _Distinguish_ between the levels of continuous values;
+
+3. _Highlight_ some graphical elements.
+
+These three functions roughly correspond to different types of color palettes:
+
+1. Use _qualitative_ color palettes to distinguish between different kinds of a categorical variable;
+
+2. Use _sequential_ or _diverging_ color palettes to distinguish between the levels of a continuous variable;
+
+3. Use _hybrid_ color palettes for conveying more complex messages. For instance, _paired color palettes_ combine qualitative and sequential aspects. Similarly, _sequential color scales_ with accent colors emphasize both continuity and contrasts to highlight some elements.
+
+```{r color_palettes}
+# defining Brew palettes
+brew_1 <- brewer.pal(n = 10, name = "Set1")
+brew_2 <- brewer.pal(n = 10, name = "Set2")
+brew_Accent <- brewer.pal(n = 10, name = "Accent")
+brew_Dark2 <- brewer.pal(n = 8, name = "Dark2")
+brew_greens <- brewer.pal(n = 9, name = "Greens")
+brew_blues <- brewer.pal(n = 9, name = "Blues")
+brew_reds <- brewer.pal(n = 9, name = "Reds")
+brew_oranges <- brewer.pal(n = 9, name = "Oranges")
+brew_Paired <- brewer.pal(n = 12, name = "Paired")
+brew_Spectral <- brewer.pal(n = 11, name = "Spectral")
+
+# Qualitative color palettes
+unikn::seecol(pal = list(pal_unikn_pref, pal_unikn_light, pal_unikn_dark, pal_signal, brew_1, brew_2, brew_Accent, brew_Dark2), pal_names = c("pal_unikn_pref", "pal_unikn_light", "pal_unikn_dark", "pal_signal", "brew_Set1", "brew_Set2", "brew_Accent", "brew_Dark2"), title = "Qualitative color palettes", lwd_brd = 4)
+
+# Sequential color palettes
+unikn::seecol(pal = list(pal_seeblau, pal_pinky,  pal_seegruen, pal_bordeaux, brew_greens, brew_reds, brew_blues, brew_oranges), pal_names = c("pal_seeblau", "pal_pinky", "pal_seegruen", "pal_bordeaux", "brew_greens", "brew_reds", "brew_blues", "brew_oranges"), n = 5, title = "Sequential color palettes (n = 5)", lwd_brd = 4)
+
+# Diverging color palettes
+# defining palettes
+unikn_1 <- c(rev(pal_seeblau), "white", pal_pinky)
+unikn_2 <- c(rev(pal_peach), "white", pal_seegruen)
+unikn_3 <- c(rev(pal_petrol), "white", pal_bordeaux)
+unikn_4 <- c(rev(pal_pinky), "white", pal_karpfenblau)
+brew_1 <- brewer.pal(n = 11, name = "Spectral")
+brew_2 <- brewer.pal(n = 11, name = "RdYlBu")
+brew_3 <- brewer.pal(n = 11, name = "PuOr")
+brew_4 <- brewer.pal(n = 11, name = "BrBG")
+
+unikn::seecol(pal = list(unikn_1, unikn_2, unikn_3, unikn_4, brew_1, brew_2, brew_3, brew_4), pal_names = c("unikn_1", "unikn_2", "unikn_3", "unikn_4", "brew_1", "brew_2", "brew_3", "brew_4"), title = "Diverging color palettes (n = 11)", lwd_brd = 4)
+
+# Hybrid color palettes
+# Paired color palettes
+unikn::seecol(pal = list(brew_Paired, pal_unikn_pair), pal_names = c("brew_Paired", "pal_unikn_pair"), title = "Paired color scales", lwd_brd = 2)
+
+# Sequential color palettes
+# defining palettes
+unikn_1s <- c("pink3", pal_grau)
+unikn_2s <- c("yellow2", pal_seeblau)
+unikn_3s <- c("purple3", pal_bordeaux)
+unikn_4s <- c("violetred4", pal_karpfenblau)
+brew_Spectrals <- brewer.pal(n = 8, name = "Spectral")
+
+unikn::seecol(pal = list(unikn_1s, unikn_2s, unikn_3s, unikn_4s, brew_Accent, brew_Spectrals), pal_names = c("unikn_1", "unikn_2", "unikn_3", "unikn_4", "brew_Accent", "brew_Spectral"), title = "Qualitative color palettes with accent colors", lwd_brd = 4)
+```
+#### Basic R colors
+R comes with 657 predefined colors, whose names can be viewed by evaluating ```colors()``` in the console, or running ```demo("colors")```. Many R plotting functions allow specifying colors by a numeric index (e.g., col = 2), rather than a name. When choosing colors by number, R internally evaluates the vector of its default color palette ```palette()```. From R version 4.0.0 on wards (released on 2020-04-24), this palette has been replaced by a new palette “R4”. The new ```palette.colors()``` function provides a sensible and simple way for generating a set of decent and distinguishable colors for depicting different types of data.
+
+Regarding color, the options provided by R are the following:
+
+* Using __base R color functions__: The grDevices package that is included in R comes with a range of functions that allow defining color palettes. To obtain continuous color palettes, the grDevices package of R traditionally offers several functions to define vectors of n colors. The color palettes returned as the output of these color functions are vibrant and bright.
+
+* Using __HCL color palettes__: An alternative to named colors and specifies a color in terms of their HEX or RGB, in R is the HCL color system that specifies a color by its hue (color type), chroma (the color colorfulness), and luminance (color brightness). Starting with R 3.6.0 (released on 2019-04-26), the ```hcl.colors()``` function of the grDevices package provides a basic and frugal implementation of the prespecified palettes in the colorspace package. From this version on wards, the default colors for ```image()``` and ```filled.contour()``` are based on ```hcl.colors()```. In addition, palette-generating functions (like ```rainbow()``` and ```gray.colors()```) feature a new ```rev``` argument to facilitate reversing the order of colors (which can also be done by using ```rev()``` to reverse the output vector of a color function).
+
+The color palettes of ```hcl.pals()``` come in four different types:
+
+1. The 9 qualitative HCL color palettes exhibit a characteristic Pastel look
+2. The 18 diverging HCL color palettes combine two sequential color palettes in a balanced fashion
+3. The 17 so-called divergingx HCL color palettes combine two color hues or palettes in a more flexible fashion
+4. The majority of 66 HCL color palettes are sequential color palettes
+
+As  ```hcl.colors()``` incorporates an immense range of color palettes from other packages (e.g., ColorBrewer, viridis, scico), this powerful functionality renders many other color packages obsolete.
+
+* Designing __palettes for color vision deficiencies__
+
+* Changing the __default palette __
+
+All these options rely on resources that any R system provides by default (in its base, graphics and grDevices packages). If this still does not satisfy your need for colors, your further options include:
+
+* Using __color packages__
+
+* Defining and __using custom colors__
+
+```{r basic_r_colors}
+# Base R color functions
+n <- 10
+p1 <- cm.colors(n)
+p2 <- rainbow(n)
+p3 <- heat.colors(n)
+p4 <- terrain.colors(n)
+p5 <- topo.colors(n)
+
+# Example plots:
+pie(rep(1, n), col = p2, main = "Pie plot with rainbow(n = 10)")
+barplot(seq(1:n), col = p4, main = "Bar plot with terrain.colors(n = 10)")
+
+# HCL color palettes
+# the 110 HCL color palettes (in the grDevices of R)
+colorspace::hcl_palettes(plot = TRUE)
+
+n <- 10
+h1 <- hcl.colors(n, palette = "Dynamic")
+h2 <- hcl.colors(n, palette = "Earth")
+h3 <- hcl.colors(n, palette = "Berlin")
+h4 <- hcl.colors(n, palette = "Fall")
+h5 <- hcl.colors(n, palette = "Sunset")
+
+# Example hcl palettes
+unikn::seecol(list(h1, h2, h3, h4, h5),
+  col_brd = "white", lwd_brd = 4,
+  title = "Example palettes from hcl.colors(n = 10)",
+  pal_names = c("Dynamic", "Earth", "Berlin", "Fall", "Sunset")
+)
+
+# types of hcl palettes
+colorspace::hcl_palettes("qualitative", plot = TRUE)
+colorspace::hcl_palettes("diverging", n = 5, plot = TRUE)
+colorspace::divergingx_palettes(n = 5, plot = TRUE)
+colorspace::hcl_palettes("sequential", n = 5, plot = TRUE)
+
+# palettes for color vision deficiencies
+# color blind friendly palette (with grey):
+cbf_1 <- c("#999999", "#E69F00", "#56B4E9", "#009E73", 
+           "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# color_blind_friendly palette (with black): 
+cbf_2 <- c("#000000", "#E69F00", "#56B4E9", "#009E73", 
+           "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+unikn::seecol(list(cbf_1, cbf_2), pal_names = c("cbf_1", "cbf_2"), title = "Two color friendly color palettes", lwd_brd = 2)
+```
+#### Using color packages
+There is a large number of R packages that provide dedicated color support (i.e., define colors and color scales, and corresponding functions) for all means and purposes. One good option for obtaining perceptually ordered and uniform color palettes are the Scientific colour maps by Fabio Crameri. They are provided in many different formats — implemented by the ```scico``` package in R — friendly to people with color vision deficiency, and still readable in black-and-white print
+
+```{r color_packages}
+# RColorBrewer
+# print all color palettes
+RColorBrewer::display.brewer.all()
+
+# viridis/viridisLite
+# Example1
+vir_10 <- viridis(n = 10)
+
+seecol(vir_10,
+  col_brd = "white", lwd_brd = 4,
+  title = "Example of a viridis color palette (n = 10)",
+  pal_names = paste0("viridis_", 1:10)
+)
+
+# Example2
+n <- 20
+v1 <- viridis(n)
+v2 <- magma(n)
+v3 <- inferno(n)
+v4 <- plasma(n)
+v5 <- cividis(n)
+
+seecol(list(v1, v2, v3, v4, v5), 
+       col_brd = "white", lwd_brd = 4, 
+       title = "Various viridis color palettes (n = 20)",
+       pal_names = c("v1: viridis", "v2: magma", "v3: inferno", "v4: plasma",  "v5: cividis"))
+```
+
 
 
 # Linting
