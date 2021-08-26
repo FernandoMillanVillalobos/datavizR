@@ -3288,8 +3288,8 @@ headTail(dat)
 # Demographic information
 # Age mean, sd and counts
 age_stats <- dat |> 
-  group_by(language) |> 
-  summarise(
+  dplyr::group_by(language) |> 
+  dplyr::summarise(
   mean_age = mean(age),
   sd_age = sd(age),
   n_values = n()
@@ -3374,15 +3374,15 @@ dat_long <- pivot_wider(
 dat_long
 
 # The whole pipeline
-# dat_long <- pivot_longer(
-#   data = dat,
-#   cols = rt_word:acc_nonword,
-#   names_sep = "_",
-#   names_to = c("dv_type", "condition"),
-#   values_to = "dv"
-# ) %>%
-#   pivot_wider(names_from = "dv_type",
-#               values_from = "dv")
+dat_long <- pivot_longer(
+  data = dat,
+  cols = rt_word:acc_nonword,
+  names_sep = "_",
+  names_to = c("dv_type", "condition"),
+  values_to = "dv"
+) %>%
+  pivot_wider(names_from = "dv_type",
+              values_from = "dv")
 
 
 # plotting rt (hist)
@@ -3990,16 +3990,17 @@ ggplot(mpg_sum2, aes(x = n, y = manufacturer, fill = color)) +
 ## Tables
 Tables are a form of data visualization. If you want to show the exact amount of every value in your data, a table might be your best solution. But tables are especially susceptible to clutter.
 ![Anatomy of a Table](input/img/tables.png)
+
 The ten guidelines of better tables:
 
 * Rule 1. Offset the headers from body 
-* Rule 2. Use subtle dividers instead of heavy gridlines 
+* Rule 2. Use subtle dividers instead of heavy grid lines 
 * Rule 3. Right-align numbers and headers 
 * Rule 4. Left-align text and header 
 * Rule 5. Select the appropriate level of precision 
 * Rule 6. Guide your reader with space between rows and columns 
 * Rule 7. Remove unit repetition 
-* Rule 8. Highlight outliers 
+* Rule 8. Highlight outlines 
 * Rule 9. Group similar data and increase white space 
 * Rule 10. Add visualizations when appropriate
 
@@ -4007,7 +4008,7 @@ The ten guidelines of better tables:
 
 Make your column titles clear. Try using boldface text or lines to offset them from the numbers and text in the body of the table.
 ![Offset the headers from body](input/img/rule01.png)
-2. __Rule 2. Use subtle dividers instead of heavy gridlines__
+2. __Rule 2. Use subtle dividers instead of heavy grid lines__
 
 For series that show the total, use shading, boldface, or subtle line breakers to distinguish these.
 ![Use subtle dividers](input/img/rule02.png)
@@ -4043,9 +4044,10 @@ Reduce repetition by grouping similar data or labels. Similar to eliminating dol
 
 Just like highlighting outliers with color or boldface, you might add sparklines to visualize some data rather than showing every number. Or you can use small bar charts to visually illustrate a series of numbers. Or you could use a heatmap and leave the numbers in the table or hide them, which can help the reader focus on the overall patterns and ignore the details. We can also embed a chart-type structure right into our table. If you want a full chart embedded within the table, a dot plot is succinct and can line up well within the linear structure of a table. You can also use a modification on the standard dot plot to place the numbers in their relative positions directly in a table.
 ![Highlight outliers](input/img/rule10.png)
+
 ### Contingency Tables in R
 #### Two-Way Tables
-Two-way tables involve two categorical variables, X with r categories and Y with c. Therefore, there are ```r times c``` possible combinations. Sometimes, both X and Y will be outcome variables, in which case it makes sense to talk about their joint distribution. On other occasions, Y will be the outcome variable and X will be the predictor variable. In this case, it does not make sense to talk about the joint distribution of X and Y. Instead, we focus on the conditional distribution of Y given X.
+Two-way tables involve two categorical variables, X with r categories and Y with c. Therefore, there are r times c possible combinations. Sometimes, both X and Y will be outcome variables, in which case it makes sense to talk about their joint distribution. On other occasions, Y will be the outcome variable and X will be the predictor variable. In this case, it does not make sense to talk about the joint distribution of X and Y. Instead, we focus on the conditional distribution of Y given X.
 
 ```{r contingency_tables_two_ways}
 # create the wage_cat variable which takes two values
