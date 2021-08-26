@@ -4182,7 +4182,7 @@ brew_Spectrals <- brewer.pal(n = 8, name = "Spectral")
 
 unikn::seecol(pal = list(unikn_1s, unikn_2s, unikn_3s, unikn_4s, brew_Accent, brew_Spectrals), pal_names = c("unikn_1", "unikn_2", "unikn_3", "unikn_4", "brew_Accent", "brew_Spectral"), title = "Qualitative color palettes with accent colors", lwd_brd = 4)
 ```
-#### Basic R colors
+### Basic R colors
 R comes with 657 predefined colors, whose names can be viewed by evaluating ```colors()``` in the console, or running ```demo("colors")```. Many R plotting functions allow specifying colors by a numeric index (e.g., col = 2), rather than a name. When choosing colors by number, R internally evaluates the vector of its default color palette ```palette()```. From R version 4.0.0 on wards (released on 2020-04-24), this palette has been replaced by a new palette “R4”. The new ```palette.colors()``` function provides a sensible and simple way for generating a set of decent and distinguishable colors for depicting different types of data.
 
 Regarding color, the options provided by R are the following:
@@ -4258,8 +4258,8 @@ cbf_2 <- c("#000000", "#E69F00", "#56B4E9", "#009E73",
 
 unikn::seecol(list(cbf_1, cbf_2), pal_names = c("cbf_1", "cbf_2"), title = "Two color friendly color palettes", lwd_brd = 2)
 ```
-#### Using color packages
-There is a large number of R packages that provide dedicated color support (i.e., define colors and color scales, and corresponding functions) for all means and purposes. One good option for obtaining perceptually ordered and uniform color palettes are the Scientific colour maps by Fabio Crameri. They are provided in many different formats — implemented by the ```scico``` package in R — friendly to people with color vision deficiency, and still readable in black-and-white print
+### Using color packages
+There is a large number of R packages that provide dedicated color support (i.e., define colors and color scales, and corresponding functions) for all means and purposes. One good option for obtaining perceptually ordered and uniform color palettes are the Scientific colour maps by Fabio Crameri. They are provided in many different formats — implemented by the ```scico``` package in R — friendly to people with color vision deficiency, and still readable in black-and-white print.
 
 ```{r color_packages}
 # RColorBrewer
@@ -4289,7 +4289,8 @@ unikn::seecol(list(v1, v2, v3, v4, v5),
        title = "Various viridis color palettes (n = 20)",
        pal_names = c("v1: viridis", "v2: magma", "v3: inferno", "v4: plasma",  "v5: cividis"))
 ```
-#### Defining and using custom colors
+### Defining and using custom colors
+#### Defining colors
 We need to distinguish between defining individual colors, converting colors, and defining color palettes. And once we defined new color palettes, we need to know how we can use them in creating visualizations.
 
 There are three common ways of defining a color in R:
@@ -4313,12 +4314,13 @@ In R, colors are sometimes specified by their __HSV__ _(hue-saturation-value)_ o
 
 The HCL system is more systematic than the HSV system and more suitable for capturing human color perception. Since R version 3.6.0 (released in April 2019), some default colors of R have been changed to use the HCL system (see the ```hcl.colors()``` function of __grDevices__ for details and available color palettes).
 
+#### Defining color palettes
 R also comes with powerful color conversion functions that allow translating color values between the different systems. For instance, we can use the ```col2rgb()``` function of __grDevices__ to obtain the RGB values that correspond to specific R color names. As ```col2rgb()``` requires a matrix-like object (rather than a vector) as its input to its col argument, we use the ```newpal()``` function of __unikn__ with ```as_df = TRUE``` to define a color palette as a data frame.
 
+#### Using colors
 Different color resources provide colors in different ways. Color palettes are either defined as functions that return an output vector, data frame, or matrix, or as R objects that are vectors, data frames, or matrices. In many cases, just providing a vector of R color names works fine. However, some packages provide color palettes as data frames or functions with variable output types. As a uniform interface for using and modifying color palettes from various sources, the __unikn__ package provides the ```usecol()``` function. The ```usecol()``` function also allows mixing combinations of colors and color palettes, squeezing or stretching them to arbitrary lengths, and setting their transparency.
 
 To use a particular base R color in a ```ggplot()``` command, we can pass its name (as a character string) to functions that includes a __color__ argument. To define and use a new color palette my_colors in a ```ggplot()``` command, we need to add the ```scale_color_manual()``` function that instructs ggplot to use a custom color scale for the current plot. Note that ```scale_color_manual()``` expects to receive color values, rather than mere color names, and a __vector__, rather than a data frame. Usually, it is safer to first define a new color palette and later access it via a color transformation function (e.g., by using the ```newpal()``` and ```usecol()``` functions of the __unikn__ package).
-
 
 ```{r defining_colors}
 # defining colors in different ways
