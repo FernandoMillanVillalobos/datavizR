@@ -4150,7 +4150,7 @@ brew_Paired <- brewer.pal(n = 12, name = "Paired")
 brew_Spectral <- brewer.pal(n = 11, name = "Spectral")
 
 # Qualitative color palettes
-unikn::seecol(pal = list(pal_unikn_pref, pal_unikn_light, pal_unikn_dark, pal_signal, brew_1, brew_2, brew_Accent, brew_Dark2), pal_names = c("pal_unikn_pref", "pal_unikn_light", "pal_unikn_dark", "pal_signal", "brew_Set1", "brew_Set2", "brew_Accent", "brew_Dark2"), title = "Qualitative color palettes", lwd_brd = 4)
+unikn::seecol(list(pal_unikn_pref, pal_unikn_light, pal_unikn_dark, pal_signal, brew_1, brew_2, brew_Accent, brew_Dark2), pal_names = c("pal_unikn_pref", "pal_unikn_light", "pal_unikn_dark", "pal_signal", "brew_Set1", "brew_Set2", "brew_Accent", "brew_Dark2"), title = "Qualitative color palettes", lwd_brd = 4)
 
 # Sequential color palettes
 unikn::seecol(pal = list(pal_seeblau, pal_pinky,  pal_seegruen, pal_bordeaux, brew_greens, brew_reds, brew_blues, brew_oranges), pal_names = c("pal_seeblau", "pal_pinky", "pal_seegruen", "pal_bordeaux", "brew_greens", "brew_reds", "brew_blues", "brew_oranges"), n = 5, title = "Sequential color palettes (n = 5)", lwd_brd = 4)
@@ -4175,7 +4175,7 @@ unikn::seecol(pal = list(brew_Paired, pal_unikn_pair), pal_names = c("brew_Paire
 # Sequential color palettes
 # defining palettes
 unikn_1s <- c("pink3", pal_grau)
-unikn_2s <- c("yellow2", pal_seeblau)
+unikn_2s <- c("gold", pal_seeblau)
 unikn_3s <- c("purple3", pal_bordeaux)
 unikn_4s <- c("violetred4", pal_karpfenblau)
 brew_Spectrals <- brewer.pal(n = 8, name = "Spectral")
@@ -4270,7 +4270,7 @@ RColorBrewer::display.brewer.all()
 # Example1
 vir_10 <- viridis(n = 10)
 
-seecol(vir_10,
+unikn::seecol(vir_10,
   col_brd = "white", lwd_brd = 4,
   title = "Example of a viridis color palette (n = 10)",
   pal_names = paste0("viridis_", 1:10)
@@ -4284,13 +4284,209 @@ v3 <- inferno(n)
 v4 <- plasma(n)
 v5 <- cividis(n)
 
-seecol(list(v1, v2, v3, v4, v5), 
+unikn::seecol(list(v1, v2, v3, v4, v5), 
        col_brd = "white", lwd_brd = 4, 
        title = "Various viridis color palettes (n = 20)",
        pal_names = c("v1: viridis", "v2: magma", "v3: inferno", "v4: plasma",  "v5: cividis"))
 ```
+#### Defining and using custom colors
+We need to distinguish between defining individual colors, converting colors, and defining color palettes. And once we defined new color palettes, we need to know how we can use them in creating visualizations.
+
+There are three common ways of defining a color in R:
+
+1. by __color name__ (e.g., ```col = c("black", "white")```)
+See colors() for the list of 657 color names available in base R — and note that every color is represented in character type.
+
+2. by __HEX__ (hexadecimal) code (e.g., ```col = c("#000000", "#FFFFFF")```)
+
+Such HEX codes essentially specify a triplet of RGB values in hexadecimal notation. The three bytes represent a color’s red, green and blue components by a number in the range from 00 to FF (in hexadecimal notation), corresponding to a range from 0 to 255 (in decimal notation). As this way of representing color is popular online (in HTML), they are also known as web colors. Note that, in R, each HEX code is represented in character type, with the hash tag ```#``` as a prefix. HEX codes with more than six digits following the ```#``` symbol encode opacity information (in the last two digits), but this information is often lost in color conversions.
+
+3. by __RGB__ (red-green-blue) values (e.g., ```col = c(rgb(red = 0, green = 0, blue = 0, maxColorValue = 255), rgb(255, 255, 255, maxColorValue = 255))```)
+
+Such RGB values are more traditional and can be entered and converted in most computer systems. In R, we can use the ```rgb()``` function to enter the ```red```, ```green```, and ```blue``` value of a color, as well as an optional opacity (or transparency) value ```alpha```. Note that we need to specify the ```maxColorValue = 255``` to scale these values in the most common fashion (from 0 to 255).
+
+In R, colors are sometimes specified by their __HSV__ _(hue-saturation-value)_ or __HCL__ _(hue-chroma-luminance)_ values.
+
+* The __HSV__ _(hue-saturation-value)_ system is a simple transformation of the RGB color space and is used in many software systems (see ```?hsv``` for corresponding R functions).
+
+* In the HCL system, the _hue_ specifies a color type, _chroma_ the color’s colorfulness, and _luminance_ its brightness (see ```?hcl``` for details)
+
+The HCL system is more systematic than the HSV system and more suitable for capturing human color perception. Since R version 3.6.0 (released in April 2019), some default colors of R have been changed to use the HCL system (see the ```hcl.colors()``` function of __grDevices__ for details and available color palettes).
+
+R also comes with powerful color conversion functions that allow translating color values between the different systems. For instance, we can use the ```col2rgb()``` function of __grDevices__ to obtain the RGB values that correspond to specific R color names. As ```col2rgb()``` requires a matrix-like object (rather than a vector) as its input to its col argument, we use the ```newpal()``` function of __unikn__ with ```as_df = TRUE``` to define a color palette as a data frame.
+
+Different color resources provide colors in different ways. Color palettes are either defined as functions that return an output vector, data frame, or matrix, or as R objects that are vectors, data frames, or matrices. In many cases, just providing a vector of R color names works fine. However, some packages provide color palettes as data frames or functions with variable output types. As a uniform interface for using and modifying color palettes from various sources, the __unikn__ package provides the ```usecol()``` function. The ```usecol()``` function also allows mixing combinations of colors and color palettes, squeezing or stretching them to arbitrary lengths, and setting their transparency.
+
+To use a particular base R color in a ```ggplot()``` command, we can pass its name (as a character string) to functions that includes a __color__ argument. To define and use a new color palette my_colors in a ```ggplot()``` command, we need to add the ```scale_color_manual()``` function that instructs ggplot to use a custom color scale for the current plot. Note that ```scale_color_manual()``` expects to receive color values, rather than mere color names, and a __vector__, rather than a data frame. Usually, it is safer to first define a new color palette and later access it via a color transformation function (e.g., by using the ```newpal()``` and ```usecol()``` functions of the __unikn__ package).
 
 
+```{r defining_colors}
+# defining colors in different ways
+my_cols <- c("black", "orange", "olivedrab3", "steelblue")
+
+unikn::seecol(list(my_cols), lwd_brd = 4)
+
+p1 <- c("black", "orange", "olivedrab3", "steelblue") # 1. R color names
+
+p2 <- c("#000000", "#FFA500", "#9ACD32", "#4682B4") # 2. HEX codes
+
+p3 <- c(
+  rgb(0, 0, 0, maxColorValue = 255), # 3. RGB values
+  rgb(255, 165, 0, maxColorValue = 255),
+  rgb(154, 205, 50, maxColorValue = 255),
+  rgb(70, 130, 180, maxColorValue = 255)
+)
+
+p4 <- c(
+  "black", "orange", # 4. R color names,
+  "#9ACD32", #  HEX codes, and
+  rgb(70, 130, 180, maxColorValue = 255)  # RGB values
+)         
+
+p1
+p2
+p3
+p4
+
+all.equal(p1, p2)
+all.equal(p2, p3)
+all.equal(p1, p4)
+
+unikn::seecol(list(p1, p2, p3, p4),
+  col_brd = "white", lwd_brd = 4,
+  pal_names = c("p1 (names)", "p2 (HEX)", "p3 (RGB)", "p4 (mix)"),
+  title = "Defining the same colors in 4 ways"
+)
+
+# converting colors
+# defining a vector with colors:
+col_names <- c("black", "grey", "white", "firebrick", "forestgreen", "gold", "steelblue")
+
+# defining corresponding color palette
+my_pal <- unikn::newpal(col = col_names, names = col_names, as_df = TRUE)
+
+unikn::seecol(my_pal, 
+       col_brd = "black", lwd_brd = 2, 
+       title = "See the colors, HEX codes, and RGB values of my_pal")
+
+# obtaining a matrix of RGB values
+col2rgb(my_pal)
+
+# defining color palettes
+# from R color names
+pal_flag_de <- unikn::newpal(
+  col = c("black", "red3", "gold"),
+  names = c("Schwarz", "Rot", "Gold")
+)
+
+unikn::seecol(pal_flag_de,
+  col_brd = "white", lwd_brd = 4,
+  title = "Colors of the German flag",
+  mar_note = "Approximation (based on R color names)"
+)
+
+# searching all different colors that begin with "red"
+unikn::seecol(grepal("^red"))
+
+# from HEX values
+color_google <- c("#4285f4", "#34a853", "#fbbc05", "#ea4335")
+names_google <- c("blueberry", "sea green", "selective yellow", "cinnabar")
+pal_google <- newpal(color_google, names_google)
+
+unikn::seecol(pal_google,
+  col_brd = "white", lwd_brd = 6,
+  title = "Colors of the Google logo",
+  mar_note = "Source: <https://www.schemecolor.com/google-logo-colors.php>"
+)
+
+# from RGB
+# Barrier-free color palette
+# (a) Vector of colors (as RGB values):
+o_i_colors <- c(
+  rgb(0, 0, 0, maxColorValue = 255), # black
+  rgb(230, 159, 0, maxColorValue = 255), # orange
+  rgb(86, 180, 233, maxColorValue = 255), # skyblue
+  rgb(0, 158, 115, maxColorValue = 255), # green
+  rgb(240, 228, 66, maxColorValue = 255), # yellow
+  rgb(0, 114, 178, maxColorValue = 255), # blue
+  rgb(213, 94, 0, maxColorValue = 255), # vermillion
+  rgb(204, 121, 167, maxColorValue = 255) # purple
+)
+
+o_i_names <- c("black", "orange", "skyblue", "green", "yellow", "blue", "vermillion", "purple")
+
+pal_okabe_ito <- newpal(
+  col = o_i_colors,
+  names = o_i_names
+)
+
+unikn::seecol(pal_okabe_ito,
+  title = "Color-blind friendly color palette",
+  mar_note = "Source: Figure 16 of Okabe & Ito (2008); see <https://jfly.uni-koeln.de/color/>"
+)
+
+# comparing palettes
+my_pals <- list(pal_flag_de, pal_google, pal_okabe_ito)
+unikn::seecol(my_pals,
+  col_brd = "white", lwd_brd = 6,
+  title = "Comparing custom color palettes"
+)
+
+# adding transparency
+unikn::seecol(my_pals,
+  n = 10, alpha = .50,
+  col_brd = "white", lwd_brd = 8,
+  pal_names = c("pal_flag_de", "pal_google", "pal_okabe_ito"),
+  title = "Comparing custom palettes (with transparency)"
+)
+
+# using custom colors in base R
+# Define 3 new palettes (from different sources):
+p1 <- unikn::usecol(c("orange", "olivedrab3", "steelblue")) # from R color names
+p2 <- unikn::usecol(terrain.colors(10)) # from a color function
+p3 <- unikn::usecol(pal_unikn) # from a color palette (as df)
+
+# Example plots:
+pie(rep(1, 8), col = p1, main = "Pie plot using p1")
+barplot(runif(10, 4, 8), col = p2, main = "Bar plot using p2")
+barplot(runif(10, 4, 8), col = p3, main = "Bar plot using p3")
+
+# Mixing a new color palette: 
+p1 <- unikn::usecol(pal = c(rev(pal_seeblau), "white", pal_pinky))  
+
+# Mixing, extending a color palette (and adding transparency): 
+p2 <- unikn::usecol(pal = c(rev(pal_seegruen), "white", pal_bordeaux), n = 15, alpha = .60)  
+
+# Defining and using a custom color palette:
+p3 <- unikn::usecol(c("#E77500", "white", "black"), n = 7)
+
+# Show set of color palettes:
+unikn::seecol(list(p1, p2, p3), col_brd = "white", lwd_brd = 2,
+       title = "Using usecol() to mix and modify color palettes")
+
+# using custom colors in ggplot2
+# Choose a color (plus transparency):
+my_col <- unikn::usecol(Pinky, alpha = 1 / 2)
+
+# Using an individual color (as an argument):
+ggplot(mpg) +
+  geom_point(aes(x = displ, y = hwy),
+    color = my_col, size = 4 # color arg expects a value or a name (automatically translated to HEX values)
+  ) +
+  labs(title = "Using a custom color in ggplot2") +
+  theme_classic()
+
+# Define color vector (in 4 different ways, see p4 above): 
+my_pal <- c("black", "orange",                         # R color names, 
+            "#9ACD32",                                 # HEX codes, and
+            rgb( 70, 130, 180, maxColorValue = 255))   # RGB values 
+
+ggplot(mpg) +
+  geom_point(aes(x = displ, y = hwy, color = factor(cyl)), size = 4, alpha = .5) +
+  scale_color_manual(values = my_pal) + # expects to receive values and a vector
+  labs(title = "Using a custom color palette in ggplot2") + 
+  theme_classic()
+```
 
 # Linting
 
