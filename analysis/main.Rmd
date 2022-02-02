@@ -38,7 +38,7 @@ user_name <- "fernandomillanvillalobos" # your Git username (only needed if
 project_name <- "datavizR" # adapt!
 package_date <- "2021-06-01" # date of the CRAN snapshot that
 # the checkpoint package uses
-r_version <- "4.1.1" # R-Version to use
+r_version <- "4.1.2" # R-Version to use
 options(Ncpus = 4) # use 4 cores for parallelized installation of packages
 if (r_version != paste0(version$major, ".", version$minor)) {
   stop("ERROR: specified R version does not match currently used.")
@@ -144,6 +144,7 @@ library(lintr) # code linting
 library(rmarkdown)
 library(cowplot) # theme
 library(extrafont)
+library(sf)
 library(ggrepel) # text labels
 library(gapminder) #data sets 
 library(socviz) # book Data Visualization: A Practical...
@@ -164,13 +165,12 @@ library(hexbin)
 library(patchwork)
 library(distributional) # for dist_normal() 
 library(psych)
-library(introdataviz)
 library(ggalluvial)
 library(ggdist)
 library(ds4psy) # book Data Science for Psychologists
 library(unikn)
+library(introdataviz)
 library(ISLR) # tables dataset 
-library(Rfast) # useful functions
 library(MASS)
 library(gganimate)",
 file = "manifest.R")
@@ -245,10 +245,14 @@ source("scripts/outliers.R")
 The group aesthetic is usually only needed when the grouping information you need to tell ggplot about is not built into the variables being mapped.
 
 ```{r grouped_data}
-p <- ggplot(data = gapminder,
-            mapping = aes(x = year,
-                          y = gdpPercap))
-p + geom_line(aes(group=country))
+p <- ggplot(
+  data = gapminder,
+  mapping = aes(
+    x = year,
+    y = gdpPercap
+  )
+)
+p + geom_line(aes(group = country))
 ```
 
 ### Facet to Make Small Multiples
@@ -3680,11 +3684,11 @@ theme_hgrid_config <- theme_minimal_hgrid(
 ggplot(dat_long, aes(x = condition, y = rt, fill = language)) +
   introdataviz::geom_split_violin(alpha = .4, trim = FALSE) +
   geom_boxplot(width = .2, alpha = .6, show.legend = FALSE) +
-  stat_summary(fun.data = "mean_se", geom = "pointrange", show.legend = F, 
+  stat_summary(fun.data = "mean_se", geom = "pointrange", show.legend = F,
                position = position_dodge(.175)) +
   scale_x_discrete(name = "Condition", labels = c("Non-word", "Word")) +
   scale_y_continuous(name = "Reaction time (ms)",
-                     breaks = seq(200, 800, 100), 
+                     breaks = seq(200, 800, 100),
                      limits = c(200, 800),
                      expand = c(0, 0)) +
   scale_fill_viridis_d(option = "E", name = "Language group") +
@@ -3698,10 +3702,10 @@ ggplot(dat_long, aes(x = "", y = rt, fill = language)) +
   introdataviz::geom_flat_violin(trim=FALSE, alpha = 0.4,
     position = position_nudge(x = rain_height+.05)) +
   # rain
-  geom_point(aes(colour = language), size = 2, alpha = .5, show.legend = FALSE, 
+  geom_point(aes(colour = language), size = 2, alpha = .5, show.legend = FALSE,
               position = position_jitter(width = rain_height, height = 0)) +
   # boxplots
-  geom_boxplot(width = rain_height, alpha = 0.4, show.legend = FALSE, 
+  geom_boxplot(width = rain_height, alpha = 0.4, show.legend = FALSE,
                outlier.shape = NA,
                position = position_nudge(x = -rain_height*2)) +
   # mean and SE point in the cloud
@@ -3710,12 +3714,12 @@ ggplot(dat_long, aes(x = "", y = rt, fill = language)) +
   # adjust layout
   scale_x_discrete(name = "", expand = c(rain_height*3, 0, 0, 0.7)) +
   scale_y_continuous(name = "Reaction time (ms)",
-                     breaks = seq(200, 800, 100), 
+                     breaks = seq(200, 800, 100),
                      limits = c(200, 800)) +
   coord_flip() +
-  facet_wrap(~factor(condition, 
-                     levels = c("word", "nonword"), 
-                     labels = c("Word", "Non-Word")), 
+  facet_wrap(~factor(condition,
+                     levels = c("word", "nonword"),
+                     labels = c("Word", "Non-Word")),
              nrow = 2) +
   # custom colours and theme
   scale_fill_viridis_d(option = "E", name = "Language group") +
