@@ -138,40 +138,39 @@ if (Sys.getenv("RSTUDIO") == "1") {
 # tidyverse: see https://blog.rstudio.org/2016/09/15/tidyverse-1-0-0/
 cat("
 library(rstudioapi)
-library(tidyverse, warn.conflicts = FALSE) # ggplot2, dplyr, tidyr, readr, purrr, tibble, magrittr, readxl
-library(scales) # scales for ggplot2
-library(lintr) # code linting
+library(tidyverse)
+library(scales) 
+library(lintr)
 library(rmarkdown)
-library(cowplot) # theme
+library(cowplot)
 library(extrafont)
 library(sf)
-library(ggrepel) # text labels
-library(gapminder) #data sets 
-library(socviz) # book Data Visualization: A Practical...
+library(ggrepel)
+library(gapminder)
+library(socviz)
 library(RColorBrewer)
 library(ggforce)
-library(dichromat) # palettes for color-blind
-library(ggridges) # density ridges plots
-library(viridis) # colors
+library(dichromat)
+library(ggridges)
+library(viridis)
 library(palmerpenguins)
 library(lubridate)
 library(ggforce)
-library(ggthemes) # set of themes
-library(nycflights13) # ds example
-library(broom) # cleans model output 
-library(glue) # for easy text formatting 
-library(ggiraph) # for interaction 
+library(ggthemes)
+library(nycflights13)
+library(broom) 
+library(ggiraph) 
 library(hexbin)
 library(patchwork)
-library(distributional) # for dist_normal() 
+library(distributional) 
 library(psych)
 library(ggalluvial)
 library(ggdist)
-library(ds4psy) # book Data Science for Psychologists
+library(ds4psy)
 library(unikn)
-library(introdataviz)
-library(ISLR) # tables dataset 
+library(ISLR)
 library(MASS)
+library(introdataviz)
 library(gganimate)",
 file = "manifest.R")
 ```
@@ -2459,7 +2458,7 @@ label_data <- lm_summary %>%
   mutate(
     rsqr = signif(r.squared, 2),  # round to 2 significant digits
     pval = signif(p.value, 2),
-    label = glue("R^2 = {rsqr}, P = {pval}"),
+    label = glue::glue("R^2 = {rsqr}, P = {pval}"),
     body_mass_g = 6400, flipper_length_mm = 175 # label position in plot
   ) %>%
   dplyr::select(species, label, body_mass_g, flipper_length_mm)
@@ -3104,7 +3103,7 @@ penguins %>%
   ggplot() +                                #.env var en local env   
   aes(bill_length_mm, body_mass_g) +
   geom_point() +
-  ggtitle(glue("Species: {species}")) +
+  ggtitle(glue::glue("Species: {species}")) +
   xlab("bill length (mm)") +
   ylab("body mass (g)") +
   theme_minimal_grid() +
@@ -3117,7 +3116,7 @@ make_plot <- function(species) {
     ggplot() +
     aes(bill_length_mm, body_mass_g) +
     geom_point() +
-    ggtitle(glue("Species: {species}")) +
+    ggtitle(glue::glue("Species: {species}")) +
     xlab("bill length (mm)") +
     ylab("body mass (g)") +
     theme_minimal_grid() +
@@ -3147,7 +3146,7 @@ make_plot <- function(species) {
     ggplot() +
     aes(bill_length_mm, body_mass_g) +
     geom_point() +
-    ggtitle(glue("Species: {species}")) +
+    ggtitle(glue::glue("Species: {species}")) +
     xlab("bill length (mm)") +
     ylab("body mass (g)") +
     theme_minimal_grid() +
@@ -3160,7 +3159,7 @@ make_plot2 <- function(data, species) {
     ggplot() +
     aes(bill_length_mm, body_mass_g) +
     geom_point() +
-    ggtitle(glue("Species: {species}")) +
+    ggtitle(glue::glue("Species: {species}")) +
     xlab("bill length (mm)") +
     ylab("body mass (g)") +
     theme_minimal_grid() +
