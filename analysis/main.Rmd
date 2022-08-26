@@ -1,8 +1,7 @@
 ---
-title: "Data Visualization with R"
-subtitle: "Snippets"
+title: "r-data-visualization"
 author: "Fernando Millan Villalobos"
-date: "August 2021"
+date: "`r Sys.Date()`"
 output:
   html_document:
     code_folding: show
@@ -18,8 +17,6 @@ output:
     toc_float: 
       collapsed: yes
       smooth_scroll: false
-knit: (function(inputFile, encoding) {
-  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../", output_file = "index") })     
 ---
 
 ```{r, include=FALSE}
@@ -35,10 +32,10 @@ knitr::opts_chunk$set(
 # CONFIG
 user_name <- "fernandomillanvillalobos" # your Git username (only needed if
 # you want to deploy to GH pages)
-project_name <- "datavizR" # adapt!
-package_date <- "2021-06-01" # date of the CRAN snapshot that
+project_name <- "r-data-visualization" # adapt!
+package_date <- "2022-06-01" # date of the CRAN snapshot that
 # the checkpoint package uses
-r_version <- "4.1.2" # R-Version to use
+r_version <- "4.2.0" # R-Version to use
 options(Ncpus = 4) # use 4 cores for parallelized installation of packages
 if (r_version != paste0(version$major, ".", version$minor)) {
   stop("ERROR: specified R version does not match currently used.")
@@ -155,7 +152,6 @@ library(ggridges)
 library(viridis)
 library(palmerpenguins)
 library(lubridate)
-library(ggforce)
 library(ggthemes)
 library(nycflights13)
 library(broom) 
@@ -3741,20 +3737,20 @@ long <- pivot_longer(data, cols = everything(),
          prob = prob/100)
 
 # ridge plot
-ggplot(long, aes(x = prob, y = label, fill = label)) + 
-  ggridges::geom_density_ridges(scale = 2, show.legend = FALSE) +
-  scale_x_continuous(name = "Assigned Probability", 
-                     limits = c(0, 1.1), labels = scales::percent,
-                     expand = c(0, 0)
-                     ) +
-  # control space at top and bottom of plot
-  scale_y_discrete(name = "", expand = c(0.02, 0, .08, 0)) +
-  theme_dviz_vgrid() +
-  theme(
-    panel.grid = element_line(size = .3, linetype = "dashed"),
-    panel.border = element_blank(),
-    axis.ticks.y = element_blank()
-  )
+# ggplot(long, aes(x = prob, y = label, fill = label)) + 
+#   ggridges::geom_density_ridges(scale = 2, show.legend = FALSE) +
+#   scale_x_continuous(name = "Assigned Probability", 
+#                      limits = c(0, 1.1), labels = scales::percent,
+#                      expand = c(0, 0)
+#                      ) +
+#   # control space at top and bottom of plot
+#   scale_y_discrete(name = "", expand = c(0.02, 0, .08, 0)) +
+#   theme_dviz_vgrid() +
+#   theme(
+#     panel.grid = element_line(size = .3, linetype = "dashed"),
+#     panel.border = element_blank(),
+#     axis.ticks.y = element_blank()
+#   )
 
 # Alluvial plots
 # simulate data for 4 years of grades from 500 students
@@ -3930,39 +3926,39 @@ ggplot(mpg_sum, aes(x = n, y = manufacturer, fill = color)) +
   theme_minimal()
 
 # some polishing
-ggplot(mpg_sum, aes(x = n, y = manufacturer, fill = color)) +
-  geom_col() +
-  geom_text(
-    aes(label = perc),
-    hjust = 1, nudge_x = -.5,
-    size = 3.5, fontface = "bold", family = "Fira Sans"
-  ) +
-  scale_x_continuous(expand = c(.01, .01)) +
-  # add custom colors
-  scale_fill_identity(guide = "none") +
-  theme_void() +
-  theme(
-    axis.text.y = element_text(size = 14, hjust = 1, family = "Fira Sans"),
-    plot.margin = margin(rep(15, 4))
-  )
+# ggplot(mpg_sum, aes(x = n, y = manufacturer, fill = color)) +
+#   geom_col() +
+#   geom_text(
+#     aes(label = perc),
+#     hjust = 1, nudge_x = -.5,
+#     size = 3.5, fontface = "bold", family = "Fira Sans"
+#   ) +
+#   scale_x_continuous(expand = c(.01, .01)) +
+#   # add custom colors
+#   scale_fill_identity(guide = "none") +
+#   theme_void() +
+#   theme(
+#     axis.text.y = element_text(size = 14, hjust = 1, family = "Fira Sans"),
+#     plot.margin = margin(rep(15, 4))
+#   )
 
 # adding label boxes for accessibility
-ggplot(mpg_sum, aes(x = n, y = manufacturer, fill = color)) +
-  geom_col() +
-  geom_label(
-    aes(label = perc),
-    hjust = 1, nudge_x = -.5,
-    size = 3.5, fontface = "bold", family = "Fira Sans",
-    fill = "white", label.size = 0
-  ) +
-  scale_x_continuous(expand = c(.01, .01)) +
-  # add custom colors
-  scale_fill_identity(guide = "none") +
-  theme_void() +
-  theme(
-    axis.text.y = element_text(size = 14, hjust = 1, family = "Fira Sans"),
-    plot.margin = margin(rep(15, 4))
-  )
+# ggplot(mpg_sum, aes(x = n, y = manufacturer, fill = color)) +
+#   geom_col() +
+#   geom_label(
+#     aes(label = perc),
+#     hjust = 1, nudge_x = -.5,
+#     size = 3.5, fontface = "bold", family = "Fira Sans",
+#     fill = "white", label.size = 0
+#   ) +
+#   scale_x_continuous(expand = c(.01, .01)) +
+#   # add custom colors
+#   scale_fill_identity(guide = "none") +
+#   theme_void() +
+#   theme(
+#     axis.text.y = element_text(size = 14, hjust = 1, family = "Fira Sans"),
+#     plot.margin = margin(rep(15, 4))
+#   )
 
 # with a different label placement
 mpg_sum2 <- mpg_sum |>
@@ -3975,19 +3971,19 @@ mpg_sum2 <- mpg_sum |>
 )
 mpg_sum2
 
-ggplot(mpg_sum2, aes(x = n, y = manufacturer, fill = color)) +
-  geom_col() +
-  geom_text(
-    aes(label = perc, hjust = place),
-    size = 4, fontface = "bold", family = "Fira Sans"
-  ) +
-  scale_x_continuous(expand = c(.01, .01)) +
-  scale_fill_identity(guide = "none") +
-  theme_void() +
-  theme(
-    axis.text.y = element_text(size = 14, hjust = 1, family = "Fira Sans"),
-    plot.margin = margin(rep(15, 4))
-  )
+# ggplot(mpg_sum2, aes(x = n, y = manufacturer, fill = color)) +
+#   geom_col() +
+#   geom_text(
+#     aes(label = perc, hjust = place),
+#     size = 4, fontface = "bold", family = "Fira Sans"
+#   ) +
+#   scale_x_continuous(expand = c(.01, .01)) +
+#   scale_fill_identity(guide = "none") +
+#   theme_void() +
+#   theme(
+#     axis.text.y = element_text(size = 14, hjust = 1, family = "Fira Sans"),
+#     plot.margin = margin(rep(15, 4))
+#   )
 ```
 
 ## Tables
