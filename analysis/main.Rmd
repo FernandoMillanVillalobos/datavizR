@@ -231,6 +231,72 @@ knitr::read_chunk("scripts/outliers.R")
 source("scripts/outliers.R")
 ```
 
+# ggplot2
+
+## Introduction
+
+ggplot2 is an R package for producing statistical, or data, graphics. Unlike most other graphics packages, ggplot2 has an underlying grammar, based on the Grammar of Graphics, that allows you to compose graphs by combining independent components. This makes ggplot2 powerful. Rather than being limited to sets of pre-defined graphics, you can create novel graphics that are tailored to your specific problem. While the idea of having to learn a grammar may sound overwhelming, ggplot2 is actually easy to learn: there is a simple set of core principles and there are very few special cases. The hard part is that it may take a little time to forget all the preconceptions that you bring over from using other graphics tools.
+
+ggplot2 provides beautiful, hassle-free plots that take care of fiddly details like drawing legends. In fact, its carefully chosen defaults mean that you can produce publication-quality graphics in seconds. However, if you do have special formatting requirements, ggplot2’s comprehensive theming system makes it easy to do what you want. Ultimately, this means that rather than spending your time making your graph look pretty, you can instead focus on creating the graph that best reveals the message in your data.
+
+ggplot2 is designed to work iteratively. You start with a layer that shows the raw data. Then you add layers of annotations and statistical summaries. This allows you to produce graphics using the same structured thinking that you would use to design an analysis. This reduces the distance between the plot in your head and the one on the page.
+
+Learning the grammar will not only help you create graphics that you’re familiar with, but will also help you to create newer, better graphics. Without a grammar, there is no underlying theory, so most graphics packages are just a big collection of special cases. For example, in base R, if you design a new graphic, it’s composed of raw plot elements like lines and points so it’s hard to design new components that combine with existing plots. In ggplot2, the expressions used to create a new graphic are composed of higher-level elements, like representations of the raw data and statistical transformations, that can easily be combined with new datasets and other plots.
+
+### What is the grammar of graphics?
+
+Wilkinson created the grammar of graphics to describe the fundamental features that underlie all statistical graphics. The grammar of graphics is an answer to the question of what is a statistical graphic? ggplot2 builds on Wilkinson’s grammar by focussing on the primacy of layers and adapting it for use in R. In brief, the grammar tells us that a graphic maps the data to the aesthetic attributes (colour, shape, size) of geometric objects (points, lines, bars). The plot may also include statistical transformations of the data and information about the plot’s coordinate system. Facetting can be used to plot for different subsets of the data. The combination of these independent components are what make up a graphic.
+
+All plots are composed of the data, the information you want to visualise, and a mapping, the description of how the data’s variables are mapped to aesthetic attributes. There are five mapping components:
+
+- A __layer__ is a collection of geometric elements and statistical transformations. Geometric elements, geoms for short, represent what you actually see in the plot: points, lines, polygons, etc. Statistical transformations, stats for short, summarise the data: for example, binning and counting observations to create a histogram, or fitting a linear model.
+
+- __Scales__ map values in the data space to values in the aesthetic space. This includes the use of colour, shape or size. Scales also draw the legend and axes, which make it possible to read the original data values from the plot (an inverse mapping).
+
+- A __coord__, or coordinate system, describes how data coordinates are mapped to the plane of the graphic. It also provides axes and gridlines to help read the graph. We normally use the Cartesian coordinate system, but a number of others are available, including polar coordinates and map projections.
+
+- A __facet__ specifies how to break up and display subsets of data as small multiples. This is also known as conditioning or latticing/trellising.
+
+- A __theme__ controls the finer points of display, like the font size and background colour. While the defaults in ggplot2 have been chosen with care, you may need to consult other references to create an attractive plot.
+
+It’s also important to note what the grammar doesn’t do:
+
+- It doesn’t suggest which graphics to use. While this book endeavours to promote a sensible process for producing plots, the focus is on how to produce the plots you want, not on which plot to produce.
+
+- It doesn’t describe interactive graphics, only static ones. There is essentially no difference between displaying ggplot2 graphs on a computer screen and printing them on a piece of paper.
+
+### How does ggplot2 fit in with other R graphics?
+
+There are a number of other graphics systems available in R: base graphics, grid graphics and trellis/lattice graphics. How does ggplot2 differ from them?
+
+- __Base graphics__ were written by Ross Ihaka based on experience implementing the S graphics driver and partly looking at Chambers et al. Base graphics has a pen on paper model: you can only draw on top of the plot, you cannot modify or delete existing content. There is no (user accessible) representation of the graphics, apart from their appearance on the screen. Base graphics includes both tools for drawing primitives and entire plots. Base graphics functions are generally fast, but have limited scope. If you’ve created a single scatterplot, or histogram, or a set of boxplots in the past, you’ve probably used base graphics.
+
+- The development of __“grid” graphics__, a much richer system of graphical primitives, started in 2000. Grid is developed by Paul Murrell, growing out of his PhD work. Grid grobs (graphical objects) can be represented independently of the plot and modified later. A system of viewports (each containing its own coordinate system) makes it easier to lay out complex graphics. Grid provides drawing primitives, but no tools for producing statistical graphics.
+
+- The __lattice package__, developed by Deepayan Sarkar, uses grid graphics to implement the trellis graphics system of Cleveland and is a considerable improvement over base graphics. You can easily produce conditioned plots and some plotting details (e.g., legends) are taken care of automatically. However, lattice graphics lacks a formal model, which can make it hard to extend. Lattice graphics are explained in depth in Deepayan Sarkar.
+
+- __ggplot2__, started in 2005, is an attempt to take the good things about base and lattice graphics and improve on them with a strong underlying model which supports the production of any kind of statistical graphic, based on the principles outlined above. The solid underlying model of ggplot2 makes it easy to describe a wide range of graphics with a compact syntax, and independent components make extension easy. Like lattice, ggplot2 uses grid to draw the graphics, which means you can exercise much low-level control over the appearance of the plot.
+
+_ __htmlwidgets__, http://www.htmlwidgets.org, provides a common framework for accessing web visualisation tools from R. Packages built on top of htmlwidgets include leaflet (https://rstudio.github.io/leaflet/, maps), dygraph (http://rstudio.github.io/dygraphs/, time series) and networkD3 (http://christophergandrud.github.io/networkD3/, networks).
+
+- __plotly__, https://plotly-r.com, is a popular javascript visualisation toolkit with an R interface. It’s a great tool if you want to make interactive graphics for HTML documents, and even comes with a ggplotly() function that can convert many ggplot2 graphics into their interactive equivalents.
+
+## Layers
+
+The layered structure of ggplot2 encourages you to design and construct graphics in a structured manner. It is useful to think about the purpose of each layer before it is added. In general, there are three purposes for a layer:
+
+_ To display the __data__. We plot the raw data for many reasons, relying on our skills at pattern detection to spot gross structure, local structure, and outliers. This layer appears on virtually every graphic. In the earliest stages of data exploration, it is often the only layer.
+
+- To display a statistical __summary__ of the data. As we develop and explore models of the data, it is useful to display model predictions in the context of the data. Showing the data helps us improve the model, and showing the model helps reveal subtleties of the data that we might otherwise miss. Summaries are usually drawn on top of the data.
+
+- To add additional __metadata__: context, annotations, and references. A metadata layer displays background context, annotations that help to give meaning to the raw data, or fixed references that aid comparisons across panels. Metadata can be useful in the background and foreground.
+
+A map is often used as a background layer with spatial data. Background metadata should be rendered so that it doesn’t interfere with your perception of the data, so is usually displayed underneath the data and formatted so that it is minimally perceptible. That is, if you concentrate on it, you can see it with ease, but it doesn’t jump out at you when you are casually browsing the plot.
+
+Other metadata is used to highlight important features of the data. If you have added explanatory labels to a couple of inflection points or outliers, then you want to render them so that they pop out at the viewer. In that case, you want this to be the very last layer drawn.
+
+![The Grammar of {ggplot2}](input/img/the-grammar-ggplot2.png)
+###############################################################
 # Data Visualization: A Practical Introduction (Kieran Healy)
 
 ## Show the Right Numbers
