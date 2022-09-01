@@ -277,7 +277,7 @@ There are a number of other graphics systems available in R: base graphics, grid
 
 - __ggplot2__, started in 2005, is an attempt to take the good things about base and lattice graphics and improve on them with a strong underlying model which supports the production of any kind of statistical graphic, based on the principles outlined above. The solid underlying model of ggplot2 makes it easy to describe a wide range of graphics with a compact syntax, and independent components make extension easy. Like lattice, ggplot2 uses grid to draw the graphics, which means you can exercise much low-level control over the appearance of the plot.
 
-_ __htmlwidgets__, http://www.htmlwidgets.org, provides a common framework for accessing web visualisation tools from R. Packages built on top of htmlwidgets include leaflet (https://rstudio.github.io/leaflet/, maps), dygraph (http://rstudio.github.io/dygraphs/, time series) and networkD3 (http://christophergandrud.github.io/networkD3/, networks).
+_  **htmlwidgets**, http://www.htmlwidgets.org, provides a common framework for accessing web visualisation tools from R. Packages built on top of htmlwidgets include leaflet (https://rstudio.github.io/leaflet/, maps), dygraph (http://rstudio.github.io/dygraphs/, time series) and networkD3 (http://christophergandrud.github.io/networkD3/, networks).
 
 - __plotly__, https://plotly-r.com, is a popular javascript visualisation toolkit with an R interface. It’s a great tool if you want to make interactive graphics for HTML documents, and even comes with a ggplotly() function that can convert many ggplot2 graphics into their interactive equivalents.
 
@@ -296,6 +296,52 @@ A map is often used as a background layer with spatial data. Background metadata
 Other metadata is used to highlight important features of the data. If you have added explanatory labels to a couple of inflection points or outliers, then you want to render them so that they pop out at the viewer. In that case, you want this to be the very last layer drawn.
 
 ![The Grammar of {ggplot2}](input/img/the-grammar-ggplot2.png)
+### Individual geoms
+
+#### Basic plot types
+
+These geoms are the fundamental building blocks of ggplot2. They are useful in their own right, but are also used to construct more complex geoms. Most of these geoms are associated with a named plot: when that geom is used by itself in a plot, that plot has a special name.
+
+__Each of these geoms is two dimensional and requires both x and y aesthetics__. All of them understand `colour` (or `color`) and `size` aesthetics, and the filled geoms (bar, tile and polygon) also understand `fill`.
+
+- `geom_area()` draws an area plot, which is a line plot filled to the y-axis (filled lines). Multiple groups will be stacked on top of each other.
+
+- `geom_bar(stat = "identity")` makes a _bar chart_. We need `stat = "identity"` because __the default stat automatically counts values__ (so is essentially a 1d geom. The __identity stat leaves the data unchanged__. Multiple bars in the same location will be stacked on top of one another.
+
+- `geom_line()` makes a _line plot_. The group aesthetic determines which observations are connected; `geom_line()` connects points from left to right; `geom_path()` is similar but connects points in the order they appear in the data. Both `geom_line()` and `geom_path()` also understand the aesthetic `linetype`, which maps a categorical variable to solid, dotted and dashed lines.
+
+- `geom_point()` produces a _scatterplot_. `geom_point()` also understands the shape aesthetic.
+
+- `geom_polygon()` draws polygons, which are filled paths. Each vertex of the polygon requires a separate row in the data. It is often useful to merge a data frame of polygon coordinates with the data just prior to plotting.
+
+- `geom_rect()`, `geom_tile()` and `geom_raster()` draw _rectangles_. `geom_rect()` is parameterised by the four corners of the rectangle, xmin, ymin, xmax and ymax. `geom_tile()` is exactly the same, but parameterised by the center of the rect and its size, x, y, width and height. `geom_raster()` is a fast special case of `geom_tile()` used when all the tiles are the same size.
+
+```{r}
+# getting the data
+df <- data.frame(
+  x = c(3, 1, 5), 
+  y = c(2, 4, 6), 
+  label = c("a","b","c")
+)
+
+# basic geoms
+p <- ggplot(df, aes(x, y, label = label)) + 
+  labs(x = NULL, y = NULL) + # Hide axis label
+  theme(plot.title = element_text(size = 12)) # Shrink plot title
+
+p + geom_point() + ggtitle("point")
+p + geom_text() + ggtitle("text")
+
+# these geoms take up space outside the range of the data, and so push the axes out
+p + geom_bar(stat = "identity") + ggtitle("bar") 
+p + geom_tile() + ggtitle("raster")
+p + geom_area() + ggtitle("area")
+
+p + geom_line() + ggtitle("line")
+p + geom_path() + ggtitle("path")
+p + geom_polygon() + ggtitle("polygon")
+```
+
 ###############################################################
 # Data Visualization: A Practical Introduction (Kieran Healy)
 
