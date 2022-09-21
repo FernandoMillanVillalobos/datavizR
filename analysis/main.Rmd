@@ -167,6 +167,7 @@ library(unikn)
 library(ISLR)
 library(MASS)
 library(introdataviz)
+library(nlme)
 library(gganimate)",
 file = "manifest.R")
 ```
@@ -340,6 +341,355 @@ p + geom_area() + ggtitle("area")
 p + geom_line() + ggtitle("line")
 p + geom_path() + ggtitle("path")
 p + geom_polygon() + ggtitle("polygon")
+```
+
+### Collective geoms
+
+Geoms can be roughly divided into individual and collective geoms. An __individual__ geom draws a distinct graphical object for each observation (row). For example, the point geom draws one point per row. A __collective__ geom displays multiple observations with one geometric object. This may be a result of a statistical summary, like a boxplot, or may be fundamental to the display of the geom, like a polygon. Lines and paths fall somewhere in between: each line is composed of a set of straight segments, but each segment represents two points. How do we control the assignment of observations to graphical elements?  This is the job of the `group` aesthetic.
+
+By default, the `group` aesthetic is mapped to the interaction of __all discrete variables__ in the plot. This often partitions the data correctly, but when it does not, or when no discrete variable is used in a plot, you'll need to explicitly define the grouping structure by mapping group to a variable that has a different value for each group.
+
+There are three common cases where the default is not enough, and we will consider each one below. In the following examples, we will use a simple longitudinal data set, `Oxboys`, from the nlme package.  It records the heights (`height`) and centered ages (`age`) of 26 boys (`Subject`), measured on nine occasions (`Occasion`). `Subject` and `Occassion` are stored as ordered factors.
+
+```{r}
+head(Oxboys)
+```
+
+#### Multiple groups, one aesthetic
+
+In many situations, you want to separate your data into groups, but render them in the same way. In other words, you want to be able to distinguish individual subjects, but not identify them. This is common in longitudinal studies with many subjects, where the plots are often descriptively called spaghetti plots. For example, the following plot shows the growth trajectory for each boy (each `Subject`). If a group isn't defined by a single variable, but instead by a combination of multiple variables, use `interaction()` to combine them, e.g. `aes(group = interaction(school_id, student_id))`.
+
+```{r}
+# grouping a variable
+ggplot(Oxboys, aes(age, height, group = Subject)) + 
+  geom_point() + 
+  geom_line()
+
+# not grouping
+ggplot(Oxboys, aes(age, height)) + 
+  geom_point() + 
+  geom_line()
+```
+
+#### Different groups on different layers
+
+Sometimes we want to plot summaries that use different levels of aggregation: one layer might display individuals, while another displays an overall summary. Building on the previous example, suppose we want to add a single smooth line, showing the overall trend for *all* boys. If we use the same grouping in both layers, we get one smooth per boy. Instead of setting the grouping aesthetic in `ggplot()`, where it will apply to all layers, we set it in `geom_line()` so it applies only to the lines. There are no discrete variables in the plot so the default grouping variable will be a constant and we get one smooth.
+
+```{r}
+# wrong! we have inadvertently added a smoothed line for each boy. Grouping controls both the display of the geoms, and the operation of the stats: one statistical transformation is run for each group
+ggplot(Oxboys, aes(age, height, group = Subject)) + 
+  geom_line() + 
+  geom_smooth(method = "lm", se = FALSE)
+
+# applying ONLY to geom_line
+ggplot(Oxboys, aes(age, height)) + 
+  geom_line(aes(group = Subject)) + 
+  geom_smooth(method = "lm", size = 2, se = FALSE)
+```
+
+#### Overriding the default grouping
+
+Some plots have a discrete x scale, but you still want to draw lines connecting *across* groups. This is the strategy used in interaction plots, profile plots, and parallel coordinate plots, among others. There is one discrete variable in this plot, Occasion, so we get one boxplot for each unique x value. Now we want to overlay lines that connect each individual boy. Simply adding `geom_line()` does not work: the lines are drawn within each occassion, not across each subject.
+
+```{r}
+# drawing boxplots of height at each measurement occasion
+ggplot(Oxboys, aes(Occasion, height)) + 
+  geom_boxplot()
+
+# not work!
+ggplot(Oxboys, aes(Occasion, height)) + 
+  geom_boxplot() +
+  geom_line(colour = "#3366FF", alpha = 0.5)
+
+# overriding the grouping to say we want one line per boy
+ggplot(Oxboys, aes(Occasion, height)) + 
+  geom_boxplot() +
+  geom_line(aes(group = Subject), colour = "#3366FF", alpha = 0.5)
+```
+
+#### Matching aesthetics to graphic objects
+
+A final important issue with collective geoms is how the aesthetics of the individual observations are mapped to the aesthetics of the complete entity. What happens when different aesthetics are mapped to a single geometric element?
+
+In ggplot2, this is handled differently for different collective geoms. Lines and paths operate on a __“first value”__ principle: each segment is defined by two observations, and ggplot2 applies the aesthetic value (e.g., `colour`) associated with the first observation when drawing the segment. That is, the aesthetic for the first observation is used when drawing the first segment, the second observation is used when drawing the second segment and so on. The aesthetic value for the last observation is not used. An additional limitation for paths and lines is worth noting: the line type must be constant over each individual line. In R there is no way to draw a line which has varying line type.
+
+What about other collective geoms, such as polygons? Most collective geoms are more complicated than lines and path, and a single geometric object can map onto many observations. In such cases it is not obvious how the aesthetics of individual observations should be combined. Due to this ambiguity ggplot2 adopts a simple rule: the aesthetics from the individual components are used only if they are all the same. If the aesthetics differ for each component, ggplot2 uses a default value instead. These issues are most relevant when mapping aesthetics to continuous variables. For discrete variables, the default behaviour of ggplot2 is to treat the variable as part of the `group` aesthetic, as described above. This has the effect of splitting the collective geom into smaller pieces. This works particularly well for bar and area plots, because stacking the individual pieces produces the same shape as the original ungrouped data.
+
+If you try to map the `fill` aesthetic to a continuous variable (e.g., hwy) in the same way, it doesn’t work. The default grouping will only be based on class, so each bar is now associated with multiple colours (depending on the value of hwy for the observations in each class). Because a bar can only display one colour, ggplot2 reverts to the default grey in this case. To show multiple colours, we need multiple bars for each class, which we can get by overriding the grouping.
+
+```{r}
+# getting the data
+df <- data.frame(x = 1:3, y = 1:3, colour = c(1,3,5))
+
+# where colour is discrete
+ggplot(df, aes(x, y, colour = factor(colour))) + 
+  geom_line(aes(group = 1), size = 2) +
+  geom_point(size = 5)
+
+# where colour is continous (even though the colour variable is continuous, ggplot2 does not smoothly blend from one aesthetic value to another. If this is the behaviour you want, you can perform the linear interpolation yourself)
+ggplot(df, aes(x, y, colour = colour)) + 
+  geom_line(aes(group = 1), size = 2) +
+  geom_point(size = 5)
+
+# default value
+ggplot(mpg, aes(class)) + 
+  geom_bar()
+
+# variable as a part of the group aesthetic
+ggplot(mpg, aes(class, fill = drv)) + 
+  geom_bar()
+
+# hwy = continous variable
+ggplot(mpg, aes(class, fill = hwy)) + 
+  geom_bar()
+
+# overriding the grouping
+ggplot(mpg, aes(class, fill = hwy, group = hwy)) + 
+  geom_bar()
+
+# creating a factor with levels ordered
+ggplot(mpg, aes(class, fill = factor(ordered(hwy)), group = hwy)) + 
+  geom_bar()
+```
+
+### Statistical summaries
+
+#### Revealing uncertainty
+
+If you have information about the uncertainty present in your data, whether it be from a model or from distributional assumptions, it’s a good idea to display it. There are four basic families of geoms that can be used for this job, depending on whether the x values are discrete or continuous, and whether or not you want to display the middle of the interval, or just the extent.
+
+- Discrete x, range: `geom_errorbar()`, `geom_linerange()`
+- Discrete x, range & center: `geom_crossbar()`, `geom_pointrange()`
+- Continuous x, range: `geom_ribbon()`
+- Continuous x, range & center: `geom_smooth(stat = "identity")`
+
+These geoms assume that you are interested in the distribution of y conditional on x and use the aesthetics `ymin` and `ymax` to determine the range of the y values. Most statistics and geoms assume you are interested in y values conditional on x values (e.g., smooth, summary, boxplot, line): in most statistical models, the x values are assumed to be measured without error. If you are interested in x conditional on y (or you just want to rotate the plot 90 degrees), you can use `coord_flip()` to exchange the x and y axes.
+
+Because there are so many different ways to calculate standard errors, the calculation is up to you. For very simple cases, ggplot2 provides some tools in the form of summary functions described below, otherwise you will have to do it yourself.
+
+```{r}
+# getting the data
+y <- c(18, 11, 16)
+df <- data.frame(x = 1:3, y = y, se = c(1.2, 0.5, 1.0))
+
+# geoms to show uncertainty
+base <- ggplot(df, aes(x, y, ymin = y - se, ymax = y + se))
+base + geom_crossbar()
+base + geom_pointrange()
+base + geom_smooth(stat = "identity")
+
+base + geom_errorbar()
+base + geom_linerange()
+base + geom_ribbon()
+```
+
+#### Weighted data
+
+When you have aggregated data where each row in the data set represents multiple observations, you need some way to take into account the weighting variable. There are a few different things we might want to weight by:
+
+- Nothing, to look at numbers of counties.
+- Total population, to work with absolute numbers.
+- Area, to investigate geographic effects.
+
+The choice of a weighting variable profoundly affects what we are looking at in the plot and the conclusions that we will draw. There are two aesthetic attributes that can be used to adjust for weights. Firstly, for simple geoms like lines and points, use the `size` aesthetic. For more complicated geoms which involve some statistical transformation, we specify weights with the `weight` aesthetic. These weights will be passed on to the statistical summary function. Weights are supported for every case where it makes sense: smoothers, quantile regressions, boxplots, histograms, and density plots. You can’t see this weighting variable directly, and it doesn’t produce a legend, but it will change the results of the statistical summary.
+
+When we weight a histogram or density plot by total population, we change from looking at the distribution of the number of counties, to the distribution of the number of people.
+
+```{r}
+# Unweighted
+ggplot(midwest, aes(percwhite, percbelowpoverty)) + 
+  geom_point()
+
+# Weight by population
+ggplot(midwest, aes(percwhite, percbelowpoverty)) + 
+  geom_point(aes(size = poptotal / 1e6)) + 
+  scale_size_area("Population\n(millions)", breaks = c(0.5, 1, 2, 4))
+
+# Unweighted
+ggplot(midwest, aes(percwhite, percbelowpoverty)) + 
+  geom_point() + 
+  geom_smooth(method = lm, size = 1)
+
+# Weighted by population
+ggplot(midwest, aes(percwhite, percbelowpoverty)) + 
+  geom_point(aes(size = poptotal / 1e6)) + 
+  geom_smooth(aes(weight = poptotal), method = lm, size = 1) +
+  scale_size_area(guide = "none")
+
+# unweighted histogram
+ggplot(midwest, aes(percbelowpoverty)) +
+  geom_histogram(binwidth = 1) + 
+  ylab("Counties")
+
+# weighted histogram
+ggplot(midwest, aes(percbelowpoverty)) +
+  geom_histogram(aes(weight = poptotal), binwidth = 1) +
+  ylab("Population (1000s)")
+```
+
+#### Displaying distributions
+
+There are a number of geoms that can be used to display distributions, depending on the dimensionality of the distribution, whether it is continuous or discrete, and whether you are interested in the conditional or joint distribution. For 1d continuous distributions the most important geom is the histogram, `geom_histogram()`. It is important to experiment with binning to find a revealing view. You can change the `binwidth`, specify the number of bins, or specify the exact location of the breaks. Never rely on the default parameters to get a revealing view of the distribution. When publishing figures, don’t forget to include information about important parameters (like bin width) in the caption.
+
+If you want to compare the distribution between groups, you have a few options:
+
+- Show small multiples of the histogram, `facet_wrap(~ var)`.
+- Use colour and a frequency polygon, `geom_freqpoly()`.
+- Use a “conditional density plot”, `geom_histogram(position = "fill")`.
+
+Both the histogram and frequency polygon geom use the same underlying statistical transformation: `stat = "bin"`. This statistic produces two output variables: `count` and `density.` By default, count is mapped to y-position, because it’s most interpretable. The density is the count divided by the total count multiplied by the bin width, and is useful when you want to compare the shape of the distributions, not the overall size. An alternative to a bin-based visualisation is a density estimate. `geom_density()` places a little normal distribution at each data point and sums up all the curves. It has desirable theoretical properties, but is more difficult to relate back to the data. Use a density plot when you know that the underlying density is smooth, continuous and unbounded. You can use the `adjust` parameter to make the density more or less smooth. Note that __the area of each density estimate is standardised to one__ so that you lose information about the relative size of each group.
+
+The histogram, frequency polygon and density display a detailed view of the distribution. However, sometimes you want to compare many distributions, and it’s useful to have alternative options that sacrifice quality for quantity. Here are three options:
+
+1. `geom_boxplot()`: the box-and-whisker plot shows five summary statistics along with individual “outliers”. It displays far less information than a histogram, but also takes up much less space. You can use boxplot with both categorical and continuous x. For continuous x, you’ll also need to set the `group` aesthetic to define how the x variable is broken up into bins. A useful helper function is `cut_width()`.
+
+2. `geom_violin()`: the violin plot is a compact version of the density plot. The underlying computation is the same, but the results are displayed in a similar fashion to the boxplot.
+
+3. `geom_dotplot()`: draws one point for each observation, carefully adjusted in space to avoid overlaps and show the distribution. It is useful for smaller datasets.
+
+```{r}
+# showing distribution (default binwidth)
+ggplot(diamonds, aes(depth)) + 
+  geom_histogram()
+
+# choosing binwidth
+ggplot(diamonds, aes(depth)) + 
+  geom_histogram(binwidth = 0.1) + 
+  xlim(55, 70)
+
+# comparing distribution between groups
+# frequency polygon
+ggplot(diamonds, aes(depth)) + 
+  geom_freqpoly(aes(colour = cut), binwidth = 0.1, na.rm = TRUE) +
+  xlim(58, 68) + 
+  theme(legend.position = "none")
+
+# conditional density plot
+ggplot(diamonds, aes(depth)) + 
+  geom_histogram(aes(fill = cut), binwidth = 0.1, position = "fill",
+    na.rm = TRUE) +
+  xlim(58, 68) + 
+  theme(legend.position = "none")
+
+# geom density
+ggplot(diamonds, aes(depth)) +
+  geom_density(na.rm = TRUE) + 
+  xlim(58, 68) + 
+  theme(legend.position = "none")
+
+ggplot(diamonds, aes(depth, fill = cut, colour = cut)) +
+  geom_density(alpha = 0.2, na.rm = TRUE) + 
+  xlim(58, 68) + 
+  theme(legend.position = "none")
+
+# boxplot
+ggplot(diamonds, aes(clarity, depth)) + 
+  geom_boxplot()
+
+ggplot(diamonds, aes(carat, depth)) + 
+  geom_boxplot(aes(group = cut_width(carat, 0.1))) + 
+  xlim(NA, 2.05)
+
+# violin plot
+ggplot(diamonds, aes(clarity, depth)) + 
+  geom_violin()
+
+ggplot(diamonds, aes(carat, depth)) + 
+  geom_violin(aes(group = cut_width(carat, 0.1))) + 
+  xlim(NA, 2.05)
+
+# dot plot
+ggplot(mtcars, aes(mpg)) +
+  geom_dotplot(dotsize = 1.5, stackdir = "up")
+```
+#### Dealing with overplotting
+
+The scatterplot is a very important tool for assessing the relationship between two continuous variables. However, when the data is large, points will be often plotted on top of each other, obscuring the true relationship. In extreme cases, you will only be able to see the extent of the data, and any conclusions drawn from the graphic will be suspect. This problem is called __overplotting__.
+
+There are a number of ways to deal with it depending on the size of the data and severity of the overplotting. The first set of techniques involves tweaking aesthetic properties. These tend to be most effective for smaller datasets:
+
+- Very small amounts of overplotting can sometimes be alleviated by making the points smaller, or using hollow glyphs.
+
+- For larger datasets with more overplotting, you can use alpha blending (transparency) to make the points transparent. If you specify alpha as a ratio, the denominator gives the number of points that must be overplotted to give a solid colour. Values smaller than ~ 1/500 are rounded down to zero, giving completely transparent points.
+
+- If there is some discreteness in the data, you can randomly jitter the points to alleviate some overlaps with `geom_jitter()`. This can be particularly useful in conjunction with transparency. By default, the amount of jitter added is 40% of the resolution of the data, which leaves a small gap between adjacent regions. You can override the default with width and height arguments.
+
+Another approach to dealing with overplotting is to add data summaries to help guide the eye to the true shape of the pattern within the data. For example, you could add a smooth line showing the centre of the data with `geom_smooth()` or use one of the summaries below.
+
+```{r}
+# getting the data
+df <- data.frame(x = rnorm(2000), y = rnorm(2000))
+
+# making the points smaller 
+norm <- ggplot(df, aes(x, y)) + xlab(NULL) + ylab(NULL)
+norm + geom_point()
+norm + geom_point(shape = 1) # Hollow circles
+norm + geom_point(shape = ".") # Pixel sized
+
+# setting alpha (the denominator gives the number of points that must be overplotted to give a solid colour)
+norm + geom_point(alpha = 1 / 3)
+norm + geom_point(alpha = 1 / 5)
+norm + geom_point(alpha = 1 / 10)
+
+# setting geom_jitter()
+norm + geom_point() +
+  geom_jitter()
+norm + geom_point() +
+  geom_jitter(width = 0.7, height = 0.7)
+```
+
+#### Statistical summaries
+
+`geom_histogram()` and `geom_bin2d()` use a familiar geom, `geom_bar()` and `geom_raster()`, combined with a new statistical transformation, `stat_bin()` and `stat_bin2d()`. `stat_bin()` and `stat_bin2d()` combine the data into bins and count the number of observations in each bin. But what if we want a summary other than count? So far, we’ve just used the default statistical transformation associated with each geom. Now we’re going to explore how to use `stat_summary_bin()` to `stat_summary_2d()` to compute different summaries. You can control the size of the bins and the summary functions. `stat_summary_bin()` can produce `y`, `ymin` and `ymax` aesthetics, also making it useful for displaying measures of spread.
+
+```{r}
+# counting
+ggplot(diamonds, aes(color)) + 
+  geom_bar()
+
+ggplot(diamonds, aes(table, depth)) + 
+  geom_bin2d(binwidth = 1, na.rm = TRUE) + 
+  xlim(50, 70) + 
+  ylim(50, 70)
+
+# computing the average price
+ggplot(diamonds, aes(color, price)) + 
+  geom_bar(stat = "summary_bin", fun = mean)
+
+ggplot(diamonds, aes(table, depth, z = price)) + 
+  geom_raster(binwidth = 1, stat = "summary_2d", fun = mean, 
+    na.rm = TRUE) + 
+  xlim(50, 70) + 
+  ylim(50, 70)
+```
+
+#### Surfaces
+
+So far we’ve considered two classes of geoms:
+
+- Simple geoms where there’s a one-on-one correspondence between rows in the data frame and physical elements of the geom
+
+- Statistical geoms where introduce a layer of statistical summaries in between the raw data and the result
+
+Now we’ll consider cases where a visualisation of a three dimensional surface is required. The ggplot2 package does not support true 3d surfaces, but it does support many common tools for summarising 3d surfaces in 2d: contours, coloured tiles and bubble plots. These all work similarly, differing only in the aesthetic used for the third dimension. The reference to the ..level.. variable in this code may seem confusing, because there is no variable called ..level.. in the faithfuld data. In this context the .. notation refers to a variable computed internally.
+
+```{r}
+# contour plot
+ggplot(faithfuld, aes(eruptions, waiting)) + 
+  geom_contour(aes(z = density, colour = ..level..))
+
+# heat map
+ggplot(faithfuld, aes(eruptions, waiting)) + 
+  geom_raster(aes(fill = density))
+
+# bubble plot
+# Bubble plots work better with fewer observations
+# getting the data
+small <- faithfuld[seq(1, nrow(faithfuld), by = 10), ]
+
+ggplot(small, aes(eruptions, waiting)) + 
+  geom_point(aes(size = density), alpha = 1/3) + 
+  scale_size_area()
 ```
 
 ###############################################################
