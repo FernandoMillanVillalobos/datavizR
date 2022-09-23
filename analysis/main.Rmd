@@ -234,6 +234,9 @@ source("scripts/outliers.R")
 
 # ggplot2
 
+```{r, fig.cap=c("Concepts of the {ggplot2} Package: Part 1"), out.width="100%", out.height="600px", echo=FALSE, fig.show='hold'}
+knitr::include_graphics("input/img/02_concepts_pt1.pdf")  
+```
 ## Introduction
 
 ggplot2 is an R package for producing statistical, or data, graphics. Unlike most other graphics packages, ggplot2 has an underlying grammar, based on the Grammar of Graphics, that allows you to compose graphs by combining independent components. This makes ggplot2 powerful. Rather than being limited to sets of pre-defined graphics, you can create novel graphics that are tailored to your specific problem. While the idea of having to learn a grammar may sound overwhelming, ggplot2 is actually easy to learn: there is a simple set of core principles and there are very few special cases. The hard part is that it may take a little time to forget all the preconceptions that you bring over from using other graphics tools.
@@ -296,7 +299,6 @@ A map is often used as a background layer with spatial data. Background metadata
 
 Other metadata is used to highlight important features of the data. If you have added explanatory labels to a couple of inflection points or outliers, then you want to render them so that they pop out at the viewer. In that case, you want this to be the very last layer drawn.
 
-![The Grammar of {ggplot2}](input/img/the-grammar-ggplot2.png)
 ### Individual geoms
 
 #### Basic plot types
