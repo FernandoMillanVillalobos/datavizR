@@ -168,6 +168,10 @@ library(ISLR)
 library(MASS)
 library(introdataviz)
 library(nlme)
+library(ozmaps)
+library(rmapshaper)
+library(bomrang)
+library(stars)
 library(gganimate)",
 file = "manifest.R")
 ```
@@ -703,6 +707,183 @@ small <- faithfuld[seq(1, nrow(faithfuld), by = 10), ]
 ggplot(small, aes(eruptions, waiting)) + 
   geom_point(aes(size = density), alpha = 1/3) + 
   scale_size_area()
+```
+### Maps
+
+Plotting geospatial data is a common visualisation task, and one that requires specialised tools. Typically the problem can be decomposed into two problems: using one data source to draw a map, and adding metadata from another information source to the map.
+
+Perhaps the simplest approach to drawing maps is to use geom_polygon() to draw boundaries for different regions. For this example we take data from the maps package using `ggplot2::map_data()`. In this data set we have four variables: lat and long specify the latitude and longitude of a vertex (i.e. a corner of the polygon), id specifies the name of a region, and group provides a unique identifier for contiguous areas within a region (e.g. if a region consisted of multiple islands). To get a better sense of what the data contains, we can plot mi_counties using geom_point(), as shown in the left panel below. In this plot, each row in the data frame is plotted as a single point, producing a scatterplot that shows the corners of every county. To turn this scatterplot into a map, we use `geom_polygon()` instead, which draws each county as a distinct polygon.
+
+There are a few limitations to the approach outlined above, not least of which is the fact that the simple “longitude-latitude” data format is not typically used in real world mapping. Vector data for maps are typically encoded using the “simple features” standard produced by the Open Geospatial Consortium. The __sf__ package developed by Edzer Pebesma https://github.com/r-spatial/sf provides an excellent toolset for working with such data, and the `geom_sf()` and `coord_sf()` functions in __ggplot2__ are designed to work together with the __sf__ package. One advantage to __sf__ data is immediately apparent, we can easily see the overall structure of the data.
+
+To introduce these functions, we rely on the __ozmaps__ package by Michael Sumner https://github.com/mdsumner/ozmaps/ which provides maps for Australian state boundaries, local government areas, electoral boundaries, and so on. The data is essentially a tibble with 9 rows and 2 columns. There are 9 distinct geographical units, so there are 9 rows in this tibble. The most important column is `geometry`, which specifies the spatial geometry for each of the states and territories. Each element in the `geometry` column is a `multipolygon` object which, as the name suggests, contains data specifying the vertices of one or more polygons that demark the border of a region. Given data in this format, we can use `geom_sf()` and `coord_sf()` to draw a serviceable map without specifying any parameters or even explicitly declaring any aesthetics. To understand why this works, note that `geom_sf()` relies on a geometry aesthetic that is not used elsewhere in __ggplot2__. This aesthetic can be specified in one of three ways:
+
+- In the simplest case when the user does nothing, `geom_sf()` will attempt to map it to a column named `geometry`.
+- If the data argument is an sf object then `geom_sf()` can automatically detect a `geometry` column, even if it’s not called geometry.
+- You can specify the mapping manually in the usual way with `aes(geometry = my_column)`. This is useful if you have multiple geometry columns.
+
+The `coord_sf()` function governs the map projection.
+
+In some instances you may want to overlay one map on top of another. The __ggplot2__ package supports this by allowing you to add multiple `geom_sf()` layers to a plot. As an example, I’ll use the oz_states data to draw the Australian states in different colours, and will overlay this plot with the boundaries of Australian electoral regions. We use two map layers: the first uses `oz_states` to fill the states in different colours, and the second uses `oz_votes` to draw the electoral boundaries.
+
+Adding labels to maps is an example of annotating plots and is supported by `geom_sf_label()` and `geom_sf_text()`. Though `geom_sf()` is special in some ways, it nevertheless behaves in much the same fashion as any other geom, allowing additional data to be plotted on a map with standard geoms.
+
+At the start we drew maps by plotting longitude and latitude on a Cartesian plane, as if geospatial data were no different to other kinds of data one might want to plot. To a first approximation this is okay, but it’s not good enough if you care about accuracy. There are two fundamental problems with the approach.
+
+1. The first issue is the shape of the planet. The Earth is neither a flat plane, nor indeed is it a perfect sphere. As a consequence, to map a co-ordinate value (longitude and latitude) to a location we need to make assumptions about all kinds of things. How ellipsoidal is the Earth? Where is the centre of the planet? Where is the origin point for longitude and latitude? Where is the sea level? How do the tectonic plates move? All these things are relevant, and depending on what assumptions one makes the same co-ordinate can be mapped to locations that are many meters apart. The set of assumptions about the shape of the Earth is referred to as the geodetic datum and while it might not matter for some data visualisations, for others it is critical. There are several different choices one might consider: if your focus is North America the “North American Datum” (NAD83) is a good choice, whereas if your perspective is global the “World Geodetic System” (WGS84) is probably better.
+
+2. The second issue is the shape of your map. The Earth is approximately ellipsoidal, but in most instances your spatial data need to be drawn on a two dimensional plane. It is not possible to map the surface of an ellipsoid to a plane without some distortion or cutting, and you will have to make choices about what distortions you are prepared to accept when drawing a map. This is the job of the map projection.
+
+Map projections are often classified in terms of the geometric properties that they preserve:
+
+- __Area-preserving__ projections ensure that regions of equal area on the globe are drawn with equal area on the map.
+- __Shape-preserving__ (or conformal) projections ensure that the local shape of regions is preserved.
+
+And unfortunately, it’s not possible for any projection to be shape-preserving and area-preserving. Taken together, the geodetic datum (e.g, WGS84), the type of map projection (e.g., Mercator) and the parameters of the projection (e.g., location of the origin) specify a coordinate reference system, or CRS, a complete set of assumptions used to translate the latitude and longitude information into a two dimensional map. An sf object often includes a default CRS. Most of this output corresponds to a well-known text (WKT) string that unambiguously describes the CRS. This verbose WKT representation is used by sf internally, but there are several ways to provide user input that sf understands. One such method is to provide numeric input in the form of an EPSG code (see http://www.epsg.org/). The default CRS in the oz_votes data corresponds to EPSG code 4283.
+
+In __ggplot2__, the CRS is controlled by `coord_sf()`, which ensures that every layer in the plot uses the same projection. By default, `coord_sf()` uses the CRS associated with the geometry column of the data. Because sf data typically supply a sensible choice of CRS, this process usually unfolds invisibly, requiring no intervention from the user. However, should you need to set the CRS yourself, you can specify the crs parameter by passing valid user input to `st_crs()`.
+
+Maps created using `geom_sf()` and `coord_sf()` rely heavily on tools provided by the __sf__ package, and indeed the __sf__ package contains many more useful tools for manipulating simple features data. One advantage to simple features over other representations of spatial data is that geographical units can have complicated structure. The metadata for a sf object can accessed using helper functions. For example, `st_geometry_type()` extracts the geometry type (e.g., MULTIPOLYGON), `st_dimension()` extracts the number of dimensions (2 for XY data, 3 for XYZ), `st_bbox()` extracts the bounding box as a numeric vector, and `st_crs()` extracts the CRS as a list with two components, one for the EPSG code and the other for the proj4string. We can “cast” the MULTIPOLYGON into the two distinct POLYGON geometries from which it is constructed using `st_cast()`.
+
+A second way to supply geospatial information for mapping is to rely on raster data. Unlike the simple features format, in which geographical entities are specified in terms of a set of lines, points and polygons, rasters take the form of images. In the simplest case raster data might be nothing more than a bitmap file, but there are many different image formats out there. In the geospatial context specifically, there are image formats that include metadata (e.g., geodetic datum, coordinate reference system) that can be used to map the image information to the surface of the Earth. For example, one common format is GeoTIFF, which is a regular TIFF file with additional metadata supplied. Happily, most formats can be easily read into R with the assistance of GDAL (the Geospatial Data Abstraction Library, https://gdal.org/). For example the __sf__ package contains a function `sf::gdal_read()` that provides access to the GDAL raster drivers from R. However, you rarely need to call this function directly, as there are other high level functions that take care of this for you.
+
+```{r}
+# getting the data
+mi_counties <- map_data("county", "michigan") %>% 
+  dplyr::select(lon = long, lat, group, id = subregion)
+head(mi_counties)
+
+# plotting with geom_point()
+ggplot(mi_counties, aes(lon, lat)) + 
+  geom_point(size = .25, show.legend = FALSE) +
+  coord_quickmap()
+
+# plotting with geom_polygon()
+ggplot(mi_counties, aes(lon, lat, group = group)) +
+  geom_polygon(fill = "white", colour = "grey50") + 
+  coord_quickmap()
+
+# looking at ozmap data structure
+oz_states <- ozmaps::ozmap_states
+oz_states
+
+# drawing a map with geom_sf()
+ggplot(oz_states) + 
+  geom_sf() + 
+  coord_sf()
+
+# layering maps
+# wrangling data
+oz_states <- ozmaps::ozmap_states %>%
+  filter(NAME != "Other Territories")
+oz_votes <- rmapshaper::ms_simplify(ozmaps::abs_ced) # to reduce the time taken to render the plot
+
+ggplot() + 
+  geom_sf(data = oz_states, mapping = aes(fill = NAME), show.legend = FALSE) +
+  geom_sf(data = oz_votes, fill = NA) + 
+  coord_sf()
+
+# labelling maps
+# filter electorates in the Sydney metropolitan region
+sydney_map <- ozmaps::abs_ced %>% 
+  filter(NAME %in% c(
+  "Sydney", "Wentworth", "Warringah", "Kingsford Smith", "Grayndler", "Lowe", 
+  "North Sydney", "Barton", "Bradfield", "Banks", "Blaxland", "Reid", 
+  "Watson", "Fowler", "Werriwa", "Prospect", "Parramatta", "Bennelong", 
+  "Mackellar", "Greenway", "Mitchell", "Chifley", "McMahon"
+))
+
+# draw the electoral map of Sydney
+ggplot(sydney_map) + 
+  geom_sf(aes(fill = NAME), show.legend = FALSE) + 
+  coord_sf(xlim = c(150.97, 151.3), ylim = c(-33.98, -33.79)) + # to zoom
+  geom_sf_label(aes(label = NAME), label.padding = unit(1, "mm"))
+
+# adding other geoms
+oz_capitals <- tibble::tribble( 
+  ~city,           ~lat,     ~lon,
+  "Sydney",    -33.8688, 151.2093,  
+  "Melbourne", -37.8136, 144.9631, 
+  "Brisbane",  -27.4698, 153.0251, 
+  "Adelaide",  -34.9285, 138.6007, 
+  "Perth",     -31.9505, 115.8605, 
+  "Hobart",    -42.8821, 147.3272, 
+  "Canberra",  -35.2809, 149.1300, 
+  "Darwin",    -12.4634, 130.8456, 
+)
+
+ggplot() + 
+  geom_sf(data = oz_votes) + 
+  geom_sf(data = oz_states, colour = "black", fill = NA) + 
+  geom_point(data = oz_capitals, mapping = aes(x = lon, y = lat), colour = "red") + 
+  coord_sf()
+
+# looking at the default CRS
+st_crs(oz_votes)
+
+# looking at EPSG code
+st_crs(oz_votes) == st_crs(4283)
+
+# switching the default CRS
+ggplot(oz_votes) + geom_sf()
+ggplot(oz_votes) + geom_sf() + coord_sf(crs = st_crs(3112))
+
+# more features of sf()
+# getting the data
+edenmonaro <- ozmaps::abs_ced %>% filter(NAME == "Eden-Monaro")
+
+# example of a MULTIPOLYGON geometry
+p <- ggplot(edenmonaro) + geom_sf()
+p + coord_sf(xlim = c(147.75, 150.25), ylim = c(-37.5, -34.5)) 
+p + coord_sf(xlim = c(150, 150.25), ylim = c(-36.3, -36))
+
+edenmonaro <- edenmonaro %>% pull(geometry)
+edenmonaro
+sf::st_bbox(edenmonaro)
+sf::st_dimension(edenmonaro)
+sf::st_geometry_type(edenmonaro)
+
+# casting sf object
+sf::st_cast(edenmonaro, "POLYGON")
+
+# example casting (breaking the whole map into the constituent polygons)
+# whole map
+dawson <- ozmaps::abs_ced %>% 
+  filter(NAME == "Dawson") %>% 
+  pull(geometry)
+dawson
+
+ggplot(dawson) + 
+  geom_sf() +
+  coord_sf()
+
+# casting mainland and letting only the islands
+dawson <- sf::st_cast(dawson, "POLYGON")
+which.max(sf::st_area(dawson))
+
+ggplot(dawson[-69]) + 
+  geom_sf() + 
+  coord_sf()
+
+# getting the data
+parking <- st_read("input/parking/taz.view_pp_ogd.shp")
+zh_city <- st_read("input/zh_city/stzh.adm_stadtkreise_a.shp")
+glimpse(parking)
+glimpse(zh_city)
+
+zh_parking <- zh_city %>% pull(geometry)
+zh_parking
+sf::st_bbox(zh_parking)
+sf::st_dimension(zh_parking)
+sf::st_geometry_type(zh_parking)
+
+# plotting
+ggplot() +
+  geom_sf(data = zh_city, mapping = aes(fill = bezeichnun), show.legend = FALSE) +
+  geom_sf(data = filter(parking, art == "Für Elektrofahrzeuge"), color = "grey10", fill = NA, size = 4, alpha = 0.2) +
+  geom_sf_text(data = zh_city, aes(label = bezeichnun), size = 3, color = "white", fontface = "bold") +
+  theme_void() +
+  labs(title = "Öffentlich zugängliche Strassenparkplätze OGD")
 ```
 
 # Linting
