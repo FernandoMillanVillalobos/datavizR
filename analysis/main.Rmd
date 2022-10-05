@@ -171,7 +171,8 @@ library(nlme)
 library(ozmaps)
 library(rmapshaper)
 library(bomrang)
-library(stars)
+library(elevatr)
+library(giscoR)
 library(gganimate)",
 file = "manifest.R")
 ```
@@ -708,6 +709,7 @@ ggplot(small, aes(eruptions, waiting)) +
   geom_point(aes(size = density), alpha = 1/3) + 
   scale_size_area()
 ```
+
 ### Maps
 
 Plotting geospatial data is a common visualisation task, and one that requires specialised tools. Typically the problem can be decomposed into two problems: using one data source to draw a map, and adding metadata from another information source to the map.
@@ -865,25 +867,12 @@ ggplot(dawson[-69]) +
   geom_sf() + 
   coord_sf()
 
-# getting the data
-parking <- st_read("input/parking/taz.view_pp_ogd.shp")
-zh_city <- st_read("input/zh_city/stzh.adm_stadtkreise_a.shp")
-glimpse(parking)
-glimpse(zh_city)
-
-zh_parking <- zh_city %>% pull(geometry)
-zh_parking
-sf::st_bbox(zh_parking)
-sf::st_dimension(zh_parking)
-sf::st_geometry_type(zh_parking)
-
-# plotting
-ggplot() +
-  geom_sf(data = zh_city, mapping = aes(fill = bezeichnun), show.legend = FALSE) +
-  geom_sf(data = filter(parking, art == "Für Elektrofahrzeuge"), color = "grey10", fill = NA, size = 4, alpha = 0.2) +
-  geom_sf_text(data = zh_city, aes(label = bezeichnun), size = 3, color = "white", fontface = "bold") +
-  theme_void() +
-  labs(title = "Öffentlich zugängliche Strassenparkplätze OGD")
+# raster maps
+giscoR::gisco_get_countries(country = "Australia") %>%
+  elevatr::get_elev_raster(z = 5, clip = "location") %>% 
+  rayshader::raster_to_matrix() %>%
+  rayshader::sphere_shade() %>%
+  rayshader::plot_map()
 ```
 
 # Linting
