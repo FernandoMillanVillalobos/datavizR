@@ -176,6 +176,10 @@ library(giscoR)
 library(tidygraph)
 library(ggraph)
 library(seriation)
+library(ggtext)
+library(directlabels)
+library(ggforce)
+library(gghighlight)
 library(gganimate)",
 file = "manifest.R")
 ```
@@ -1012,6 +1016,228 @@ ggraph(hs_graph, layout = "stress") +
   facet_edges(~year)
 ```
 
+### Annotations
+
+When constructing a data visualisation, it is often necessary to make annotations to the data displayed. Conceptually, an annotation supplies metadata for the plot: that is, it provides additional information about the data being displayed. From a practical standpoint, however, metadata is just another form of data. Because of this, the annotation tools in __ggplot2__ reuse the same geoms that are used to create other plots. However, to meet the specific needs that users often have when annotating plots, there are some helper functions in __ggplot2__ itself, and a number of other packages have extended __ggplot2__ in ways you may find helpful.
+
+When customising a plot, it is often useful to modify the titles associated with the plot, axes, and legends. To assist with this task __ggplot2__ provides the `labs()` helper function, which lets you set the various titles using name-value pairs like `title = My plot title"`, `x = "X axis" or fill = "fill legend"`. The values supplied to `labs()` are typically text strings, with `\n` used to specify line breaks, but you can also supply mathematical expressions wrapped in `quote()`. The rules by which these expressions are interpreted can be found by typing `?plotmath`. It is also possible to include (some) markdown in axis and legend titles with the help of the __ggtext__ package and the __ggplot2__ theme system. To enable markdown you need to set the relevant theme element to `ggtext::element_markdown()`. There are two ways to remove the axis label. Setting `labs(x = "")` omits the label but still allocates space; setting `labs(x = NULL)` removes the label and its space.
+
+Adding text to a plot is one of the most common forms of annotation. Most plots will not benefit from adding text to every single observation on the plot, but labelling outliers and other important points is very useful. However, text annotation can be tricky due to the way that R handles fonts. The __ggplot2__ package doesn’t have all the answers, but it does provide some tools to make your life a little easier. The main tool for labelling plots is `geom_text()`, which adds label text at the specified x and y positions. `geom_text()` has the most aesthetics of any geom, because there are so many ways to control the appearance of a text:
+
+- The `family` aesthetic provides the name of a font. This aesthetic does allow you to use the name of a system font, but some care is required. There are only three fonts that are guaranteed to work everywhere: `“sans”` (the default), `“serif”`, or `“mono”`. The reason that it can be tricky to use system fonts in a plot is that text drawing is handled differently by each graphics device (GD). There are two groups of GDs: screen devices such as windows() (for Windows), quartz() (for Macs), x11() (mostly for Linux) and RStudioGD() (within RStudio) draw the plot to the screen, whereas file devices such as png() and pdf() write the plot to a file. Unfortunately, the devices do not specify fonts in the same way so if you want a font to work everywhere you need to configure the devices in different ways. Two packages simplify the quandary a bit: [showtext](https://github.com/yixuan/showtext,) and [extrafont]( https://github.com/wch/extrafont).
+
+- The `fontface` aesthetic specifies the face, and can take three values: `“plain”` (the default), `“bold”` or `“italic”`.
+
+- You can adjust the alignment of the text with the `hjust (“left”, “center”, “right”, “inward”, “outward”)` and `vjust (“bottom”, “middle”, “top”, “inward”, “outward”)` aesthetics. By default the aligment is centered, but there are often good reasons to override this. One of the most useful alignments is “inward”. It aligns text towards the middle of the plot, which ensures that labels remain within the plot limits.
+
+- The font size is controlled by the size aesthetic. Unlike most tools, __ggplot2__ specifies the size in millimeters (mm), rather than the usual points (pts). The reason for this choice is that it makes it the units for font sizes consistent with how other sizes are specified in __ggplot2__. (There are 72.27 pts in a inch, so to convert from points to mm, just multiply by 72.27 / 25.4).
+
+- `angle` specifies the rotation of the text in degrees.
+
+The __ggplot2__ package does allow you to map data values to the aesthetics used by `geom_text()`, but you should use restraint: it is hard to perceive the relationship between variables mapped to these aesthetics, and rarely useful to do so. In addition to the various aesthetics, `geom_text()` has three parameters that you can specify. Unlike the aesthetics these only take single values, so they must be the same for all labels:
+
+- Often you want to label existing points on the plot, but you don’t want the text to overlap with the points (or bars etc). In this situation it’s useful to offset the text a little, which you can do with the `nudge_x` and `nudge_y` parameters.
+
+- The third parameter is `check_overlap`. If `check_overlap = TRUE`, overlapping labels will be automatically removed from the plot. The algorithm is simple: labels are plotted in the order they appear in the data frame; if a label would overlap with an existing point, it’s omitted.
+
+A variation on `geom_text()` is `geom_label()`: it draws a rounded rectangle behind the text. This makes it useful for adding labels to plots with busy backgrounds. Labelling data well poses some challenges:
+
+- Text does not affect the limits of the plot. Unfortunately there’s no way to make this work since a label has an absolute size (e.g. 3 cm), regardless of the size of the plot. This means that the limits of a plot would need to be different depending on the size of the plot — there’s just no way to make that happen with __ggplot2__. Instead, you’ll need to tweak `xlim()` and `ylim()` based on your data and plot size.
+
+- If you want to label many points, it is difficult to avoid overlaps. `check_overlap = TRUE` is useful, but offers little control over which labels are removed. A popular technique for addressing this is to use the [__ggrepel__](https://github.com/slowkow/ggrepel) package. The package supplies `geom_text_repel()`, which optimizes the label positioning to avoid overlap. It works quite well so long as the number of labels is not excessive.
+
+- It can sometimes be difficult to ensure that text labels fit within the space that you want. The [__ggfittext__](https://github.com/wilkox/ggfittext) package contains useful tools that can assist with this, including functions that allow you to place text labels inside the columns in a bar chart.
+
+Labelling individual points with text is an important kind of annotation, but it is not the only useful technique. The __ggplot2__ package provides several other tools to annotate plots using the same geoms you would use to display data. For example you can use: 
+
+- `geom_text()` and `geom_label()` to add text, as illustrated earlier.
+- `geom_rect()` to highlight interesting rectangular regions of the plot. `geom_rect()` has aesthetics `xmin`, `xmax`, `ymin` and `ymax`.
+- `geom_line()`, `geom_path()` and `geom_segment()` to add lines. All these geoms have an arrow parameter, which allows you to place an arrowhead on the line. Create arrowheads with `arrow()`, which has arguments `angle`, `length`, `ends` and `type.`
+- `geom_vline()`, `geom_hline()` and `geom_abline()` allow you to add reference lines (sometimes called rules), that span the full range of the plot.
+
+Typically, you can either put annotations in the foreground (using alpha if needed so you can still see the data), or in the background. With the default background, a thick white line makes a useful reference: it’s easy to see but it doesn’t jump out at you. __ggplot2__ includes the `annotate()` helper function which creates the data frame for you that you can use it to add a single annotation to a plot. Another common form of annotation is to highlight a subset of points by drawing larger points in a different colour underneath the main data set.
+
+“Direct labelling”, in which the plot region itself contains the labels for groups of points instead of using a legend usually makes the plot easier to read because it puts the labels closer to the data. The broader __ggplot2__ ecosystem contains a variety of other tools to accomplish this in a more automated fashion. The __directlabels__ package provides a number of tools to make this easier. Directlabels provides a number of position methods. `smart.grid` is a reasonable place to start for scatterplots, but there are other methods that are more useful for frequency polygons and line plots.
+
+```{r}
+# customizing a plot
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(colour = factor(cyl))) +
+  labs(
+    x = "Engine displacement (litres)",
+    y = "Highway miles per gallon",
+    colour = "Number of cylinders",
+    title = "Mileage by engine size and cylinders",
+    subtitle = "Source: http://fueleconomy.gov"
+  )
+
+# adding other values to labs()
+values <- seq(from = -2, to = 2, by = .01)
+df <- data.frame(x = values, y = values ^ 3)
+ggplot(df, aes(x, y)) + 
+  geom_path() + 
+  labs(y = quote(f(x) == x^3)) # to write mathematical expressions
+
+# adding markdown elements to a plot
+df <- data.frame(x = 1:3, y = 1:3)
+p1 <- ggplot(df, aes(x, y)) +
+  geom_point() +
+  labs(x = "Axis title with *italics* and **boldface**")
+
+p2 <- base + theme(axis.title.x = ggtext::element_markdown())
+(p1 | p2)
+
+# customizing geom_text()
+# family
+df <- data.frame(x = 1, y = 3:1, family = c("sans", "serif", "mono"))
+ggplot(df, aes(x, y)) + 
+  geom_text(aes(label = family, family = family))
+
+# fontface
+df <- data.frame(x = 1, y = 3:1, face = c("plain", "bold", "italic"))
+ggplot(df, aes(x, y)) + 
+  geom_text(aes(label = face, fontface = face))
+
+# alignment
+df <- data.frame(
+  x = c(1, 1, 2, 2, 1.5),
+  y = c(1, 2, 1, 2, 1.5),
+  text = c(
+    "bottom-left", "top-left",  
+    "bottom-right", "top-right", "center"
+  )
+)
+ggplot(df, aes(x, y)) +
+  geom_text(aes(label = text))
+ggplot(df, aes(x, y)) +
+  geom_text(aes(label = text), vjust = "inward", hjust = "inward")
+
+# offsetting the text
+df <- data.frame(trt = c("a", "b", "c"), resp = c(1.2, 3.4, 2.5))
+ggplot(df, aes(resp, trt)) + 
+  geom_point() + 
+  geom_text(aes(label = paste0("(", resp, ")")), nudge_y = -0.25) + 
+  xlim(1, 3.6)
+
+# avoiding overlapping
+ggplot(mpg, aes(displ, hwy)) +
+  geom_text(aes(label = model)) +
+  xlim(1, 8)
+ggplot(mpg, aes(displ, hwy)) +
+  geom_text(aes(label = model), check_overlap = TRUE) +
+  xlim(1, 8)
+
+# drawing a rounded rectangle
+label <- data.frame(
+  waiting = c(55, 80),
+  eruptions = c(2, 4.3),
+  label = c("peak one", "peak two")
+)
+
+ggplot(faithfuld, aes(waiting, eruptions)) +
+  geom_tile(aes(fill = density)) +
+  geom_label(data = label, aes(label = label))
+
+# labelling many points with ggrepel()
+mini_mpg <- mpg[sample(nrow(mpg), 20), ]
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(colour = "red") +
+  ggrepel::geom_text_repel(data = mini_mpg, aes(label = class))
+
+# custom annotations
+# plotting the base
+ggplot(economics, aes(date, unemploy)) + 
+  geom_line()
+
+presidential <- subset(presidential, start > economics$date[1])
+
+ggplot(economics) +
+  geom_rect(
+    aes(xmin = start, xmax = end, fill = party),
+    ymin = -Inf, ymax = Inf, alpha = 0.2,
+    data = presidential
+  ) +
+  geom_vline(
+    aes(xintercept = as.numeric(start)),
+    data = presidential,
+    colour = "grey50", alpha = 0.5
+  ) +
+  geom_text(
+    aes(x = start, y = 2500, label = name),
+    data = presidential,
+    size = 3, vjust = 0, hjust = 0, nudge_x = 50
+  ) +
+  geom_line(aes(date, unemploy)) +
+  scale_fill_manual(values = c("blue", "red")) +
+  xlab("date") +
+  ylab("unemployment")
+
+# using annotate()
+yrng <- range(economics$unemploy)
+xrng <- range(economics$date)
+caption <- paste(strwrap("Unemployment rates in the US have 
+  varied a lot over the years", 40), collapse = "\n")
+ggplot(economics, aes(date, unemploy)) + 
+  geom_line() + 
+  annotate(
+    geom = "text", x = xrng[1], y = yrng[2], 
+    label = caption, hjust = 0, vjust = 1, size = 4
+  )
+
+# another example of annotate()
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(
+    data = filter(mpg, manufacturer == "subaru"),
+    colour = "orange",
+    size = 3
+  ) +
+  geom_point() +
+  # annotate(geom = "point", x = 5.5, y = 40, colour = "orange", size = 3) +
+  # annotate(geom = "point", x = 5.5, y = 40) +
+  # annotate(geom = "text", x = 5.6, y = 40, label = "subaru", hjust = "left") +
+  annotate(
+    geom = "curve", x = 4, y = 35, xend = 2.65, yend = 27,
+    curvature = .3, arrow = arrow(length = unit(2, "mm"))
+  ) +
+  annotate(geom = "text", x = 4.1, y = 35, label = "subaru", hjust = "left")
+
+# direct labelling with directlabels
+p1 <- ggplot(mpg, aes(displ, hwy, colour = class)) + 
+  geom_point()
+
+p2 <- ggplot(mpg, aes(displ, hwy, colour = class)) + 
+  geom_point(show.legend = FALSE) +
+  directlabels::geom_dl(aes(label = class), method = "smart.grid")
+(p1 | p2)
+
+# using ggforce
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point() + 
+  ggforce::geom_mark_ellipse(aes(label = cyl, group = cyl))
+
+# using gghighlight
+data(Oxboys, package = "nlme")
+ggplot(Oxboys, aes(age, height, group = Subject)) + 
+  geom_line() + 
+  geom_point() + 
+  gghighlight::gghighlight(Subject %in% 1:3)
+
+# adding annotations across facets
+mod_coef <- coef(lm(log10(price) ~ log10(carat), data = diamonds))
+ggplot(diamonds, aes(log10(carat), log10(price))) +
+  geom_bin2d() +
+  geom_abline(
+    intercept = mod_coef[1], slope = mod_coef[2],
+    colour = "white", size = 1
+  ) +
+  facet_wrap(vars(cut), nrow = 1)
+
+# another example of facets using gghighlight
+ggplot(mpg, aes(displ, hwy, colour = factor(cyl))) +
+  geom_point() +
+  gghighlight::gghighlight() +
+  facet_wrap(vars(cyl))
+```
 # Linting
 
 The code in this RMarkdown is linted with the [lintr package](https://github.com/jimhester/lintr), which is based on the  [tidyverse style guide](http://style.tidyverse.org/). 
